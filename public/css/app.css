@@ -1,0 +1,49 @@
+.sidebar {
+    width: 240px;
+    min-height: 100vh;
+    transition: all 0.3s ease;
+    position: fixed;
+    left: 0;
+    top: 56px; /* tinggi navbar */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Collapse mode */
+.sidebar-collapsed {
+    width: 70px;
+}
+
+.sidebar-collapsed .menu-text,
+.sidebar-collapsed .sidebar-title {
+    display: none;
+}
+
+.sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+}
+
+.sidebar .nav-link i {
+    font-size: 1.2rem;
+}
+
+/* Main content */
+.main-content {
+    margin-left: 240px;
+    transition: all 0.3s ease;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+.main-collapsed {
+    margin-left: 70px;
+}
+
+
+.navbar {
+    z-index: 1050;
+}
+
