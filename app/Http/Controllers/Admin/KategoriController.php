@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Kategori;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class KategoriController extends Controller
 {
@@ -56,7 +57,9 @@ class KategoriController extends Controller
             'keterangan.max'         => 'Keterangan maksimal 255 karakter.',
         ]);
 
-        Kategori::create($validated);
+        $kategori = Kategori::create($validated);
+
+        catat_log(Auth::user()->nama . ' menambahkan kategori baru: ' . $kategori->nama_kategori);
 
         return redirect()
             ->route('kategori.index')
@@ -77,6 +80,8 @@ class KategoriController extends Controller
 
         $kategori->update($validated);
 
+        catat_log(Auth::user()->nama . ' mengubah data kategori: ' . $kategori->nama_kategori);
+
         return redirect()
             ->route('kategori.index')
             ->with('success','Kategori berhasil diperbarui.');
@@ -84,8 +89,14 @@ class KategoriController extends Controller
 
     public function destroy(Kategori $kategori)
     {
+        if ($kategori->alat()->count() > 0) {
+            return back()->with('error', 'Kategori tidak dapat dihapus karena masih memiliki alat.');
+        }
+
         $kategori->delete();
 
-        return back()->with('success','Kategori berhasil dihapus.');
+        catat_log(Auth::user()->nama . ' menghapus kategori: ' . $kategori->nama_kategori);
+
+        return back()->with('success', 'Kategori berhasil dihapus.');
     }
 }
