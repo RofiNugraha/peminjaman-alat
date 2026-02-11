@@ -1,3 +1,9 @@
+@if(session('error'))
+<div class="alert alert-danger">{{ session('error') }}</div>
+@endif
+@if(session('success'))
+<div class="alert alert-success">{{ session('success') }}</div>
+@endif
 <div class="table-responsive">
     <table class="table table-hover align-middle">
         <thead class="table-light">
@@ -8,6 +14,7 @@
                 <th>Kategori</th>
                 <th>Stok</th>
                 <th>Kondisi</th>
+                <th>Denda / Hari</th>
                 <th width="140">Aksi</th>
             </tr>
         </thead>
@@ -31,6 +38,7 @@
                         {{ $alat->kondisi }}
                     </span>
                 </td>
+                <td>Rp {{ number_format($alat->denda_per_hari, 0, ',', '.') }}</td>
                 <td>
                     <a href="{{ route('alat.edit', $alat->id) }}" class="btn btn-sm btn-warning">
                         Edit

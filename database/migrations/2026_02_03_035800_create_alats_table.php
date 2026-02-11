@@ -18,6 +18,7 @@ return new class extends Migration
         $table->integer('stok');
         $table->string('kondisi');
         $table->string('gambar');
+        $table->integer('denda_per_hari')->default(0);
         $table->timestamps();
     });
     }

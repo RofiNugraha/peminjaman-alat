@@ -38,10 +38,6 @@
             </div>
         </div>
 
-        @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-
         <div class="card border-0 shadow-sm">
             <div class="card-body">
                 <div id="table-data">
@@ -54,43 +50,42 @@
 
 @push('scripts')
 <script>
-    function loadData(page = 1) {
-        $.ajax({
-            url: "{{ route('alat.index') }}",
-            type: "GET",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            data: {
-                search: $('#search').val(),
-                kategori: $('#kategori').val(),
-                kondisi: $('#kondisi').val(),
-                order: $('#order').val(),
-                per_page: $('#per_page').val(),
-                page: page
-            },
-            success: function(html) {
-                $('#table-data').html(html);
-            }
-        });
-    }
-
-    // SEARCH (debounced ringan)
-    let typing;
-    $(document).on('keyup', '#search', function() {
-        clearTimeout(typing);
-        typing = setTimeout(() => loadData(), 300);
+function loadData(page = 1) {
+    $.ajax({
+        url: "{{ route('alat.index') }}",
+        type: "GET",
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        data: {
+            search: $('#search').val(),
+            kategori: $('#kategori').val(),
+            kondisi: $('#kondisi').val(),
+            order: $('#order').val(),
+            per_page: $('#per_page').val(),
+            page: page
+        },
+        success: function(html) {
+            $('#table-data').html(html);
+        }
     });
+}
 
-    $(document).on('change', '#kategori, #kondisi, #order, #per_page', function() {
-        loadData();
-    });
+let typing;
+$(document).on('keyup', '#search', function() {
+    clearTimeout(typing);
+    typing = setTimeout(() => loadData(), 300);
+});
 
-    $(document).on('click', '.pagination a', function(e) {
-        e.preventDefault();
-        const page = new URL(this.href).searchParams.get('page');
-        loadData(page);
-    });
+$(document).on('change', '#kategori, #kondisi, #order, #per_page', function() {
+    loadData();
+});
+
+$(document).on('click', '.pagination a', function(e) {
+    e.preventDefault();
+    const page = new URL(this.href).searchParams.get('page');
+    loadData(page);
+});
 </script>
 @endpush
 @endsection

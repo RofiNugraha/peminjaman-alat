@@ -54,6 +54,16 @@
                             </select>
                             @error('kondisi') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Denda per Hari (Rp)</label>
+                            <input type="number" name="denda_per_hari"
+                                value="{{ old('denda_per_hari', $alat->denda_per_hari ?? 0) }}" min="0"
+                                class="form-control">
+                            <small class="text-muted">
+                                Denda keterlambatan per hari.
+                            </small>
+                        </div>
                     </div>
 
                     <div class="mb-3">

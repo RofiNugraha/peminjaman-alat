@@ -14,6 +14,8 @@ class Alat extends Model
         'stok',
         'kondisi',
         'gambar',
+        'denda_per_hari',
+        'denda_per_hari',
     ];
 
     public function kategori()
@@ -24,5 +26,10 @@ class Alat extends Model
     public function peminjaman()
     {
         return $this->hasMany(Peminjaman::class, 'id_alat');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(PeminjamanItem::class, 'id_alat');
     }
 }

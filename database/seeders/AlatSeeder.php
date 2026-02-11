@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Alat;
 use App\Models\Kategori;
-use Illuminate\Support\Str;
 
 class AlatSeeder extends Seeder
 {
@@ -15,16 +14,34 @@ class AlatSeeder extends Seeder
 
         foreach ($kategoris as $kategori) {
 
-            // Setiap kategori punya 3–6 alat
             $jumlahAlat = rand(3, 6);
 
             for ($i = 1; $i <= $jumlahAlat; $i++) {
+
+                $kondisi = collect(['Baik', 'Rusak'])->random();
+
+                $stok = $kondisi === 'Baik'
+                    ? rand(5, 15)
+                    : rand(0, 3);
+
+                $dendaPerHari = match (strtolower($kategori->nama_kategori)) {
+                    'kamera', 'elektronik' => 10000,
+                    'proyektor'            => 15000,
+                    'laptop'               => 20000,
+                    default                => 2000,
+                };
+
+                if ($kondisi === 'Rusak') {
+                    $dendaPerHari = 1000;
+                }
+
                 Alat::create([
-                    'id_kategori' => $kategori->id,
-                    'nama_alat'   => $kategori->nama_kategori . ' ' . Str::upper(Str::random(4)),
-                    'stok'        => rand(1, 15),
-                    'kondisi'     => collect(['Baik', 'Rusak'])->random(),
-                    'gambar'      => 'alat/default.png',
+                    'id_kategori'    => $kategori->id,
+                    'nama_alat'      => $kategori->nama_kategori . ' ' . ($i),
+                    'stok'           => $stok,
+                    'kondisi'        => $kondisi,
+                    'denda_per_hari' => $dendaPerHari,
+                    'gambar'         => 'alat/default.png',
                 ]);
             }
         }
