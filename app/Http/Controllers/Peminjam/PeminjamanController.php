@@ -94,44 +94,67 @@ class PeminjamanController extends Controller
                 'after_or_equal:today',
                 function ($attr, $value, $fail) {
                     if (Carbon::parse($value)->isWeekend()) {
-                        $fail('Tanggal pinjam tidak boleh hari Sabtu atau Minggu.');
+                        $fail('Tanggal pinjam tidak boleh pada hari Sabtu atau Minggu.');
                     }
                 }
             ],
             'tgl_kembali' => [
                 'required',
                 'date',
-                'after:tgl_pinjam',
+                'after_or_equal:tgl_pinjam',
                 function ($attr, $value, $fail) use ($request) {
                     $pinjam  = Carbon::parse($request->tgl_pinjam);
                     $kembali = Carbon::parse($value);
 
                     if ($pinjam->diffInDays($kembali) > 7) {
-                        $fail('Durasi maksimal peminjaman 7 hari.');
+                        $fail('Durasi maksimal peminjaman adalah 7 hari.');
                     }
 
                     if ($kembali->isWeekend()) {
-                        $fail('Tanggal kembali tidak boleh hari Sabtu atau Minggu.');
+                        $fail('Tanggal kembali tidak boleh pada hari Sabtu atau Minggu.');
                     }
                 }
             ],
+        ], [
+            'id_alat.required' => 'Silakan pilih alat yang ingin dipinjam.',
+            'id_alat.exists' => 'Alat yang dipilih tidak ditemukan.',
+            'qty.required' => 'Jumlah peminjaman wajib diisi.',
+            'qty.integer' => 'Jumlah peminjaman harus berupa angka.',
+            'qty.min' => 'Jumlah minimal peminjaman adalah 1.',
+            'tgl_pinjam.required' => 'Tanggal pinjam wajib diisi.',
+            'tgl_pinjam.date' => 'Tanggal pinjam tidak valid.',
+            'tgl_pinjam.after_or_equal' => 'Tanggal pinjam tidak boleh sebelum hari ini.',
+            'tgl_kembali.required' => 'Tanggal kembali wajib diisi.',
+            'tgl_kembali.date' => 'Tanggal kembali tidak valid.',
+            'tgl_kembali.after_or_equal' => 'Tanggal kembali tidak boleh sebelum tanggal pinjam.',
         ]);
 
         $alat = Alat::findOrFail($request->id_alat);
 
         if ($request->qty > $alat->stok) {
-            return back()->withErrors([
-                'qty' => 'Jumlah melebihi stok tersedia.'
-            ]);
+            return back()
+                ->withErrors(['qty' => 'Jumlah yang diminta melebihi stok yang tersedia.'])
+                ->withInput();
+        }
+
+        $stokMenunggu = PeminjamanItem::where('id_alat', $alat->id)
+            ->whereHas('peminjaman', fn($q) => $q->where('status', 'menunggu'))
+            ->sum('qty');
+
+        if (($stokMenunggu + $request->qty) > $alat->stok) {
+            return back()
+                ->withErrors(['qty' => 'Sebagian stok sedang dalam proses peminjaman oleh pengguna lain. Silakan coba beberapa saat lagi.'])
+                ->withInput();
         }
 
         DB::transaction(function () use ($request) {
-
             $peminjaman = Peminjaman::create([
-                'id_user'     => Auth::id(),
-                'tgl_pinjam'  => $request->tgl_pinjam,
-                'tgl_kembali' => $request->tgl_kembali,
-                'status'      => 'menunggu',
+                'id_user'       => Auth::id(),
+                'tgl_pinjam'    => $request->tgl_pinjam,
+                'tgl_kembali'   => $request->tgl_kembali,
+                'status'        => 'menunggu',
+                'total_denda'   => 0,
+                'status_denda'  => 'tidak_ada',
             ]);
 
             PeminjamanItem::create([
@@ -141,9 +164,11 @@ class PeminjamanController extends Controller
             ]);
         });
 
+        catat_log(Auth::user()->nama . ' mengajukan peminjaman alat ' . $alat->nama_alat);
+
         return redirect()
             ->route('peminjam.peminjaman.index')
-            ->with('success', 'Pengajuan peminjaman berhasil diajukan.');
+            ->with('success', 'Pengajuan peminjaman berhasil diajukan. Silakan menunggu persetujuan dari petugas.');
     }
 
     public function batal(Peminjaman $peminjaman)

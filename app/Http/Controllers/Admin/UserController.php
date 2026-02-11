@@ -84,7 +84,9 @@ class UserController extends Controller
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
-        User::create($validated);
+        $user = User::create($validated);
+
+        catat_log(Auth::user()->nama . ' menambahkan user baru: ' . $user->nama);
 
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan');
     }
@@ -114,6 +116,8 @@ class UserController extends Controller
             'role' => $validated['role']
         ]);
 
+        catat_log(Auth::user()->nama . ' mengubah data user: ' . $user->nama);
+
         return redirect()->route('users.index')->with('success', 'Role user berhasil diperbarui');
     }
 
@@ -130,6 +134,8 @@ class UserController extends Controller
         }
 
         $user->delete();
+
+        catat_log(Auth::user()->nama . ' menghapus user: ' . $user->nama);
 
         return redirect()->route('users.index')->with('success', 'User berhasil dihapus');
     }

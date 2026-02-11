@@ -17,6 +17,8 @@ return new class extends Migration
             $table->date('tgl_pinjam');
             $table->date('tgl_kembali');
             $table->enum('status', ['menunggu', 'disetujui', 'ditolak', 'dibatalkan', 'kadaluarsa', 'dikembalikan'])->default('menunggu');
+            $table->integer('total_denda')->default(0);
+            $table->enum('status_denda', ['tidak_ada','belum','lunas'])->default('tidak_ada');
             $table->timestamps();
         });
     }

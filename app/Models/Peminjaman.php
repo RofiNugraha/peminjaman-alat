@@ -13,6 +13,14 @@ class Peminjaman extends Model
         'tgl_pinjam',
         'tgl_kembali',
         'status',
+        'total_denda',
+        'status_denda',
+    ];
+
+    protected $casts = [
+        'tgl_pinjam'   => 'date',
+        'tgl_kembali'  => 'date',
+        'total_denda'  => 'integer',
     ];
 
     public function canBeApproved()
@@ -33,5 +41,21 @@ class Peminjaman extends Model
     public function pengembalian()
     {
         return $this->hasOne(Pengembalian::class, 'id_peminjaman');
+    }
+
+    public function getIsTelatAttribute(): bool
+    {
+        return $this->status === 'dikembalikan'
+            && $this->pengembalian
+            && $this->pengembalian->hari_telat > 0;
+    }
+
+    public function getStatusDendaLabelAttribute(): string
+    {
+        return match ($this->status_denda) {
+            'belum'      => 'Belum Dibayar',
+            'lunas'      => 'Lunas',
+            default      => 'Tidak Ada',
+        };
     }
 }
