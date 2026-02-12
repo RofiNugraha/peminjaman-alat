@@ -40,6 +40,7 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, false)) {
             $request->session()->regenerate();
+            catat_log(Auth::user()->nama . ' login ke sistem');
             return redirect()->route('dashboard');
         }
 
@@ -50,6 +51,7 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
+        catat_log(Auth::user()->nama . ' logout dari sistem');
         Auth::logout();
 
         $request->session()->invalidate();
