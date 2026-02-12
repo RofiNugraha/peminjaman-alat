@@ -1,0 +1,24 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Notification extends Model
+{
+    protected $fillable = [
+        'id_user',
+        'judul',
+        'pesan',
+        'dibaca',
+    ];
+
+    protected $casts = [
+        'dibaca' => 'boolean',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
