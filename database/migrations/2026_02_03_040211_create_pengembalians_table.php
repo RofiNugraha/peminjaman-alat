@@ -15,8 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_peminjaman')->constrained('peminjamans');
             $table->date('tgl_dikembalikan');
-            $table->integer('jumlah_hari_telat')->default(0);
-            $table->integer('denda')->default(0);
+            $table->integer('hari_telat')->default(0);
             $table->timestamps();
         });
     }
