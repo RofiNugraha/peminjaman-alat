@@ -1,57 +1,101 @@
 <div class="table-responsive">
-    <table class="table table-bordered align-middle">
-        <thead class="table-light">
+    <table class="table table-modern align-middle mb-0">
+        <thead>
             <tr>
-                <th>No</th>
+                <th width="60">No</th>
+                <th>Kode</th>
                 <th>Alat</th>
-                <th>Tanggal Pinjam</th>
-                <th>Jatuh Tempo</th>
-                <th>Hari Telat</th>
-                <th>Total Denda</th>
-                <th>Status</th>
+                <th>Kondisi</th>
+                <th width="120">Terlambat</th>
+                <th width="160">Total Denda</th>
+                <th width="140">Status</th>
+                <th width="100" class="text-center">Aksi</th>
             </tr>
         </thead>
         <tbody>
             @php
             $no = ($peminjamans->currentPage() - 1) * $peminjamans->perPage() + 1;
+
+            $statusColors = [
+            'belum' => 'danger',
+            'lunas' => 'success',
+            'tidak_ada' => 'secondary'
+            ];
             @endphp
 
             @forelse ($peminjamans as $p)
             <tr>
-                <td>{{ $no++ }}</td>
+                <td class="text-muted">{{ $no++ }}</td>
 
                 <td>
-                    @foreach ($p->items as $item)
-                    <div>{{ $item->alat->nama_alat }} ({{ $item->qty }})</div>
+                    <div class="fw-semibold">{{ $p->kode_peminjaman }}</div>
+                    <small class="text-muted">
+                        {{ $p->tgl_pinjam->format('d M Y') }}
+                    </small>
+                </td>
+
+                <td>
+                    <div class="small text-muted">
+                        @foreach ($p->items as $item)
+                        <div>
+                            {{ $item->alat->nama_alat }}
+                            <span class="text-muted">({{ $item->qty }})</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </td>
+
+                <td>
+                    @if($p->pengembalian && $p->pengembalian->items->count())
+                    @foreach($p->pengembalian->items as $item)
+                    <div class="mb-1">
+                        <span class="badge bg-{{ 
+                                $item->kondisi == 'baik' ? 'success' : 
+                                ($item->kondisi == 'rusak' ? 'warning' : 'danger') 
+                            }} bg-opacity-10 text-{{ 
+                                $item->kondisi == 'baik' ? 'success' : 
+                                ($item->kondisi == 'rusak' ? 'warning' : 'danger') 
+                            }}">
+                            {{ ucfirst($item->kondisi) }}
+                        </span>
+                    </div>
                     @endforeach
-                </td>
-
-                <td>{{ \Carbon\Carbon::parse($p->tgl_pinjam)->format('d M Y') }}</td>
-
-                <td>{{ \Carbon\Carbon::parse($p->tgl_kembali)->format('d M Y') }}</td>
-
-                <td>
-                    {{ optional($p->pengembalian)->hari_telat ?? 0 }} hari
-                </td>
-
-                <td>
-                    <strong class="text-danger">
-                        Rp {{ number_format($p->total_denda) }}
-                    </strong>
-                </td>
-
-                <td>
-                    @if ($p->status_denda === 'lunas')
-                    <span class="badge bg-success">Lunas</span>
                     @else
-                    <span class="badge bg-danger">Belum Dibayar</span>
+                    <span class="text-muted">-</span>
                     @endif
+                </td>
+
+                <td>
+                    @if($p->pengembalian && $p->pengembalian->hari_telat > 0)
+                    <span class="badge bg-warning bg-opacity-10 text-warning">
+                        {{ $p->pengembalian->hari_telat }} hari
+                    </span>
+                    @else
+                    <span class="text-muted">-</span>
+                    @endif
+                </td>
+
+                <td class="fw-semibold text-danger">
+                    Rp {{ number_format($p->total_denda, 0, ',', '.') }}
+                </td>
+
+                <td>
+                    <span
+                        class="badge bg-{{ $statusColors[$p->status_denda] }} bg-opacity-10 text-{{ $statusColors[$p->status_denda] }}">
+                        {{ $p->status_denda === 'belum' ? 'Belum Dibayar' : ucfirst($p->status_denda) }}
+                    </span>
+                </td>
+
+                <td class="text-center">
+                    <a href="{{ route('peminjam.denda.show', $p->id) }}" class="btn btn-sm btn-light border">
+                        <i class="bi bi-eye"></i>
+                    </a>
                 </td>
             </tr>
             @empty
             <tr>
-                <td colspan="7" class="text-center text-muted py-3">
-                    Anda tidak memiliki denda 🎉
+                <td colspan="8" class="text-center text-muted py-4">
+                    Tidak ada data denda
                 </td>
             </tr>
             @endforelse
@@ -59,11 +103,12 @@
     </table>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mt-3 flex-wrap">
+<div class="d-flex flex-wrap justify-content-between align-items-center p-3 border-top">
+
     <div class="d-flex align-items-center gap-2">
-        <label>Data per halaman:</label>
-        <select id="per_page" class="form-select w-auto">
-            @foreach([5,10,25,50,100] as $size)
+        <span class="small text-muted">Data per halaman</span>
+        <select id="per_page" class="form-select form-select-sm w-auto">
+            @foreach ([5,10,25,50,100] as $size)
             <option value="{{ $size }}" @selected($perPage==$size)>
                 {{ $size }}
             </option>
@@ -74,4 +119,5 @@
     <div>
         {{ $peminjamans->links('vendor.pagination.custom') }}
     </div>
+
 </div>

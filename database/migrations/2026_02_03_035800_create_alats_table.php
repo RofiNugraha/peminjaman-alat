@@ -12,15 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('alats', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('id_kategori')->constrained('kategoris');
-        $table->string('nama_alat');
-        $table->integer('stok');
-        $table->string('kondisi');
-        $table->string('gambar');
-        $table->integer('denda_per_hari')->default(0);
-        $table->timestamps();
-    });
+            $table->id();
+            $table->string('kode_alat')->unique();
+            $table->foreignId('id_kategori')->constrained('kategoris');
+            $table->string('nama_alat');
+            $table->integer('stok');
+            $table->string('gambar')->nullable();
+            $table->integer('denda_per_hari')->default(0);
+            $table->timestamps();
+        });
     }
     /**
      * Reverse the migrations.

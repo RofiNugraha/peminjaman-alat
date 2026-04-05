@@ -3,65 +3,90 @@
 @section('title', 'Daftar Alat')
 
 @section('content')
-<div id="mainContent" class="main-content">
-    <div class="container-fluid px-4 py-4">
-        <div class="d-flex align-items-center mb-4">
-            <a href="{{ route('peminjam.kategori.index') }}" class="btn btn-light me-3">Kembali</a>
-            <h4 class="fw-bold mb-3">
-                Alat Kategori: {{ $kategori->nama_kategori }}
-            </h4>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="mb-1">Daftar Alat</h3>
+        <p class="mb-0 text-muted">{{ $kategori->nama_kategori }}</p>
+    </div>
 
-        </div>
-        <div class="row mb-4">
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <input type="text" id="search" class="form-control" placeholder="Cari nama alat...">
-                </div>
+    <a href="{{ route('peminjam.kategori.index') }}" class="btn btn-secondary">
+        Kembali
+    </a>
+</div>
 
-                <div class="col-md-4">
-                    <select id="filter-kondisi" class="form-select">
-                        <option value="">Semua Kondisi</option>
-                        <option value="Baik">Baik</option>
-                        <option value="Rusak">Rusak</option>
-                    </select>
-                </div>
-            </div>
+<div class="card mb-3">
+    <div class="card-body d-flex flex-wrap gap-3 align-items-end">
 
+        <div>
+            <label class="form-label small">Cari Alat</label>
+            <input type="text" id="search" class="form-control" placeholder="Nama alat..."
+                value="{{ request('search') }}">
         </div>
 
-        @if($alats->isEmpty())
-        <div class="alert alert-warning">
-            Tidak ada alat pada kategori ini.
+        <div>
+            <label class="form-label small">Data per halaman</label>
+            <select id="perPage" class="form-select">
+                @foreach([4,8,12,16] as $size)
+                <option value="{{ $size }}" @selected($perPage==$size)>{{ $size }}</option>
+                @endforeach
+            </select>
         </div>
-        @else
 
-        <div id="alat-container">
-            @include('peminjam.kategori._alat_list', ['alats' => $alats])
-        </div>
-        @endif
     </div>
 </div>
+
+@if($alats->isEmpty())
+<div class="text-center text-muted py-5">
+    Tidak ada alat pada kategori ini
+</div>
+@else
+<div class="card">
+    <div class="card-body">
+        <div id="alat-container">
+            @include('peminjam.kategori._alat_list')
+        </div>
+    </div>
+</div>
+@endif
 
 <script>
 let debounce;
 
-function fetchAlat() {
+function fetchAlat(url = null) {
     const search = document.getElementById('search').value;
-    const kondisi = document.getElementById('filter-kondisi').value;
+    const perPage = document.getElementById('perPage').value;
 
-    const params = new URLSearchParams({
-        search: search,
-        kondisi: kondisi
-    });
+    let endpoint;
 
-    fetch(`{{ route('peminjam.kategori.show', $kategori->id) }}?${params.toString()}`, {
+    if (url) {
+        const u = new URL(url);
+
+        u.searchParams.set('search', search);
+        u.searchParams.set('per_page', perPage);
+
+        if (u.searchParams.get('per_page') != perPage) {
+            u.searchParams.set('page', 1);
+        }
+
+        endpoint = u.toString();
+    } else {
+        endpoint = `{{ route('peminjam.kategori.show', $kategori) }}?search=${search}&per_page=${perPage}&page=1`;
+    }
+
+    fetch(endpoint, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
         .then(res => res.text())
         .then(html => {
-            document.getElementById('alat-container').innerHTML = html;
+            const container = document.getElementById('alat-container');
+            container.style.opacity = 0.5;
+
+            setTimeout(() => {
+                container.innerHTML = html;
+                container.style.opacity = 1;
+            }, 150);
         });
 }
 
@@ -70,6 +95,16 @@ document.getElementById('search').addEventListener('input', () => {
     debounce = setTimeout(fetchAlat, 300);
 });
 
-document.getElementById('filter-kondisi').addEventListener('change', fetchAlat);
+document.getElementById('perPage').addEventListener('change', () => {
+    fetchAlat();
+});
+
+document.addEventListener('click', function(e) {
+    const link = e.target.closest('.pagination a');
+    if (link) {
+        e.preventDefault();
+        fetchAlat(link.href);
+    }
+});
 </script>
 @endsection

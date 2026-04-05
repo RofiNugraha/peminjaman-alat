@@ -28,7 +28,7 @@ class PeminjamanController extends Controller
         $dateTo   = $request->date_to;
 
         $peminjamanItems = PeminjamanItem::with([
-            'alat.kategori',
+            'alat.kategoris',
             'peminjaman'
         ])
         ->whereHas('peminjaman', function ($q) {
@@ -59,7 +59,16 @@ class PeminjamanController extends Controller
             )
         )
 
-        ->orderByDesc('created_at')
+        ->join('peminjamans', 'peminjaman_items.id_peminjaman', '=', 'peminjamans.id')
+        ->orderByRaw("
+            CASE 
+                WHEN peminjamans.status = 'menunggu' THEN 0 
+                ELSE 1 
+            END
+        ")
+        ->orderBy('peminjamans.tgl_pinjam', $direction)
+
+        ->select('peminjaman_items.*')
         ->paginate($perPage)
         ->withQueryString();
 
@@ -74,10 +83,20 @@ class PeminjamanController extends Controller
 
     public function create(Alat $alat)
     {
-        if ($alat->stok <= 0) {
+        $user = Auth::user();
+
+        if (!$user->profilSiswa || !$user->dataSiswa) {
             return redirect()
-                ->back()
-                ->with('error', 'Stok alat habis.');
+                ->route('profile.show')
+                ->with('error', 'Lengkapi profil dan data siswa terlebih dahulu.');
+        }
+
+        if ($user->dataSiswa->status !== 'aktif') {
+            return back()->with('error', 'Akun Anda tidak aktif.');
+        }
+
+        if ($alat->stok <= 0) {
+            return back()->with('error', 'Stok alat habis.');
         }
 
         return view('peminjam.peminjaman.create', compact('alat'));
@@ -147,6 +166,14 @@ class PeminjamanController extends Controller
                 ->withInput();
         }
 
+        $limit = Peminjaman::where('id_user', Auth::id())
+            ->where('status', 'menunggu')
+            ->count();
+
+            if ($limit >= 3) {
+                return back()->with('error', 'Terlalu banyak pengajuan. Tunggu proses sebelumnya.');
+            }
+
         DB::transaction(function () use ($request) {
             $peminjaman = Peminjaman::create([
                 'id_user'       => Auth::id(),
@@ -169,6 +196,22 @@ class PeminjamanController extends Controller
         return redirect()
             ->route('peminjam.peminjaman.index')
             ->with('success', 'Pengajuan peminjaman berhasil diajukan. Silakan menunggu persetujuan dari petugas.');
+    }
+
+    public function show(Peminjaman $peminjaman)
+    {
+        if ($peminjaman->id_user !== Auth::id()) {
+            abort(403);
+        }
+
+        $peminjaman->load([
+            'user.profilSiswa.dataSiswa',
+            'items.alat.kategoris',
+            'approvedBy',
+            'rejectedBy'
+        ]);
+
+        return view('peminjam.peminjaman.show', compact('peminjaman'));
     }
 
     public function batal(Peminjaman $peminjaman)

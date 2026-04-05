@@ -1,31 +1,32 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-dark border-bottom fixed-top">
+<nav class="navbar navbar-expand-lg fixed-top navbar-modern">
     <div class="container-fluid">
-        <span class="navbar-brand fw-bold text-light">
-            Peminjaman Alat
+        <button id="toggleSidebar" class="btn btn-light me-2">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <span class="navbar-brand fw-semibold">
+            Sistem Peminjaman
         </span>
 
         <div class="ms-auto d-flex align-items-center gap-3">
+
             @if(auth()->user()->role === 'peminjam')
-            <li class="nav-item dropdown">
-                <a class="nav-link position-relative text-white" href="{{ route('peminjam.notifikasi.index') }}">
-                    <i class="bi bi-bell fs-5"></i>
+            <a class="nav-notif" href="{{ route('peminjam.notifikasi.index') }}">
+                <span class="notif-icon">
+                    <i class="bi bi-bell"></i>
 
                     @if(($unreadNotifCount ?? 0) > 0)
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    <span class="notif-badge">
                         {{ $unreadNotifCount > 9 ? '9+' : $unreadNotifCount }}
                     </span>
                     @endif
-                </a>
-            </li>
+                </span>
+            </a>
             @endif
 
-            <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                @csrf
-                <button class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-box-arrow-right"></i>
-                    Logout
-                </button>
-            </form>
+            <button class="btn btn-outline-light btn-sm" onclick="document.getElementById('logout-form').submit()">
+                Logout
+            </button>
 
         </div>
     </div>

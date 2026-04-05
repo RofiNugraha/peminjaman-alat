@@ -1,62 +1,85 @@
 @if(session('error'))
-<div class="alert alert-danger">{{ session('error') }}</div>
+<div class="alert alert-danger mb-3">
+    {{ session('error') }}
+</div>
 @endif
+
 @if(session('success'))
-<div class="alert alert-success">{{ session('success') }}</div>
+<div class="alert alert-success mb-3">
+    {{ session('success') }}
+</div>
 @endif
+
 <div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead class="table-light">
+    <table class="table table-modern align-middle mb-0">
+        <thead>
             <tr>
-                <th>No</th>
-                <th>Gambar</th>
+                <th width="60">No</th>
+                <th width="80">Gambar</th>
                 <th>Nama Alat</th>
                 <th>Kategori</th>
-                <th>Stok</th>
-                <th>Kondisi</th>
-                <th>Denda / Hari</th>
-                <th width="140">Aksi</th>
+                <th width="100">Stok</th>
+                <th width="160">Denda / Hari</th>
+                <th width="140" class="text-center">Aksi</th>
             </tr>
         </thead>
+
         <tbody>
-            @forelse ($alats as $alat)
+            @forelse ($alats as $index => $alat)
             <tr>
-                <td>{{ $loop->iteration + ($alats->currentPage() - 1) * $alats->perPage() }}</td>
-                <td>
-                    <img src="{{ asset('storage/'.$alat->gambar) }}" class="rounded" width="60"
-                        alt="{{ $alat->nama_alat }}">
+                <td class="text-muted">
+                    {{ ($alats->currentPage() - 1) * $alats->perPage() + $index + 1 }}
                 </td>
-                <td>{{ $alat->nama_alat }}</td>
-                <td>{{ $alat->kategori->nama_kategori ?? '-' }}</td>
-                <td>{{ $alat->stok }}</td>
+
                 <td>
-                    <span class="badge
-                                    @if($alat->kondisi === 'Baik') bg-success
-                                    @elseif($alat->kondisi === 'Rusak') bg-warning
-                                    @else bg-danger
-                                    @endif">
-                        {{ $alat->kondisi }}
+                    <img src="{{ asset('storage/'.$alat->gambar) }}" class="rounded" width="50" height="50"
+                        style="object-fit: cover;">
+                </td>
+
+                <td class="fw-semibold">
+                    {{ $alat->nama_alat }}
+                </td>
+
+                <td class="text-muted">
+                    {{ $alat->kategoris->nama_kategori ?? '-' }}
+                </td>
+
+                <td>
+                    <span class="badge bg-light text-dark border">
+                        {{ $alat->stok }}
                     </span>
                 </td>
-                <td>Rp {{ number_format($alat->denda_per_hari, 0, ',', '.') }}</td>
-                <td>
-                    <a href="{{ route('alat.edit', $alat->id) }}" class="btn btn-sm btn-warning">
-                        Edit
-                    </a>
 
-                    <form action="{{ route('alat.destroy', $alat->id) }}" method="POST" class="d-inline"
-                        onsubmit="return confirm('Yakin ingin menghapus alat ini?')">
-                        @csrf
-                        @method('DELETE')
-                        <button class="btn btn-sm btn-danger">
-                            Hapus
-                        </button>
-                    </form>
+                <td class="fw-medium">
+                    Rp {{ number_format($alat->denda_per_hari, 0, ',', '.') }}
+                </td>
+
+                <td class="text-center">
+                    <div class="d-flex justify-content-center gap-1">
+
+                        <a href="{{ route('alat.show',$alat->id) }}" class="btn btn-sm btn-light border">
+                            <i class="bi bi-eye"></i>
+                        </a>
+
+                        <a href="{{ route('alat.edit',$alat->id) }}" class="btn btn-sm btn-light border">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+
+                        <form action="{{ route('alat.destroy',$alat->id) }}" method="POST" class="delete-form">
+                            @csrf
+                            @method('DELETE')
+
+                            <button type="submit" class="btn btn-sm btn-light border">
+                                <i class="bi bi-trash text-danger"></i>
+                            </button>
+                        </form>
+
+                    </div>
                 </td>
             </tr>
             @empty
             <tr>
-                <td colspan="7" class="text-center text-muted">
+                <td colspan="7" class="text-center text-muted py-4">
                     Data alat belum tersedia
                 </td>
             </tr>
@@ -65,20 +88,21 @@
     </table>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mt-3">
-    <div>
-        <label class="me-2">Data per halaman:</label>
-        <select id="per_page" class="form-select d-inline w-auto">
+<div class="d-flex flex-wrap justify-content-between align-items-center p-3 border-top">
+
+    <div class="d-flex align-items-center gap-2">
+        <span class="small text-muted">Data per halaman</span>
+        <select id="per_page" class="form-select form-select-sm w-auto">
             @foreach([5,10,25,50,100] as $size)
             <option value="{{ $size }}" @selected($perPage==$size)>
                 {{ $size }}
             </option>
             @endforeach
         </select>
-
     </div>
 
-    <div class="mt-4">
+    <div>
         {{ $alats->links('vendor.pagination.custom') }}
     </div>
+
 </div>

@@ -1,76 +1,81 @@
 <div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead class="table-light">
+    <table class="table table-modern align-middle mb-0">
+        <thead>
             <tr>
-                <th>No</th>
-                <th>Nama Peminjam</th>
-                <th>Alat</th>
-                <th>Kategori</th>
-                <th>Tanggal Pinjam</th>
-                <th>Tanggal Kembali</th>
-                <th>Aksi</th>
+                <th width="60">No</th>
+                <th>Kode</th>
+                <th>Peminjam</th>
+                <th>Tgl Pinjam</th>
+                <th>Tgl Kembali</th>
+                <th width="140">Status</th>
+                <th width="100" class="text-center">Aksi</th>
             </tr>
         </thead>
         <tbody>
-            @php $no = ($peminjamans->currentPage()-1) * $peminjamans->perPage() + 1; @endphp
-            @forelse ($peminjamans as $p)
+            @foreach ($peminjamans as $index => $p)
             <tr>
-                <td>{{ $no++ }}</td>
-                <td>{{ $p->user->nama }}</td>
-                <td>
-                    @foreach ($p->items as $item)
-                    <div>{{ $item->alat->nama_alat }} ({{ $item->qty }})</div>
-                    @endforeach
+                <td class="text-muted">
+                    {{ ($peminjamans->currentPage() - 1) * $peminjamans->perPage() + $index + 1 }}
                 </td>
-                <td>
-                    @foreach ($p->items as $item)
-                    <div>{{ $item->alat->kategori->nama_kategori }}</div>
-                    @endforeach
-                </td>
-                <td>{{ \Carbon\Carbon::parse($p->tgl_pinjam)->format('d M Y') }}</td>
-                <td>{{ \Carbon\Carbon::parse($p->tgl_kembali)->format('d M Y') }}</td>
-                <td class="d-flex gap-1">
-                    <form action="{{ route('petugas.peminjaman.approve', $p->id) }}" method="POST">
-                        @csrf
-                        @php
-                        $stokCukup = $p->items->every(fn($i) => $i->alat->stok >= $i->qty);
-                        @endphp
-                        @if ($stokCukup)
-                        <button class="btn btn-success btn-sm"
-                            onclick="return confirm('Yakin ingin menyetujui pengajuan ini?')" @disabled($p->status !==
-                            'menunggu')>
-                            Setujui
-                        </button>
-                        @else
-                        <button class="btn btn-secondary btn-sm" disabled>Stok Tidak Cukup</button>
-                        @endif
-                    </form>
 
-                    <form action="{{ route('petugas.peminjaman.reject', $p->id) }}" method="POST">
-                        @csrf
-                        <button class="btn btn-danger btn-sm"
-                            onclick="return confirm('Yakin ingin menolak pengajuan ini?')" @disabled($p->status !==
-                            'menunggu')>
-                            Tolak
-                        </button>
-                    </form>
+                <td class="fw-semibold">{{ $p->kode_peminjaman }}</td>
+
+                <td>
+                    {{ $p->user->profilSiswa->dataSiswa->nama ?? '-' }}
+                </td>
+
+                <td class="text-muted">
+                    {{ $p->tgl_pinjam->format('d M Y') }}
+                </td>
+
+                <td class="text-muted">
+                    {{ $p->tgl_kembali->format('d M Y') }}
+                </td>
+
+                <td>
+                    @php
+                    $colors = [
+                    'menunggu' => 'warning',
+                    'disetujui' => 'success',
+                    'ditolak' => 'danger',
+                    'dibatalkan' => 'secondary',
+                    'dikembalikan' => 'info',
+                    'kadaluarsa' => 'dark'
+                    ];
+                    @endphp
+
+                    <span
+                        class="badge bg-{{ $colors[$p->status] ?? 'secondary' }} bg-opacity-10 text-{{ $colors[$p->status] ?? 'secondary' }}">
+                        {{ ucfirst($p->status) }}
+                    </span>
+                </td>
+
+                <td class="text-center">
+                    <a href="{{ route('petugas.peminjaman.show', $p->id) }}" class="btn btn-sm btn-light border">
+                        <i class="bi bi-eye"></i>
+                    </a>
                 </td>
             </tr>
-            @empty
-            <tr>
-                <td colspan="7" class="text-center text-muted py-3">Tidak ada data peminjaman.</td>
-            </tr>
-            @endforelse
+            @endforeach
         </tbody>
     </table>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mt-3 flex-wrap">
+@if($peminjamans->isEmpty())
+<div class="text-center py-4 text-muted">
+    Tidak ada data peminjaman
+</div>
+@endif
+
+<div class="d-flex flex-wrap justify-content-between align-items-center p-3 border-top">
+
     <div class="d-flex align-items-center gap-2">
-        <label>Data per halaman:</label>
-        <select id="per_page" class="form-select w-auto">
+        <span class="small text-muted">Data per halaman</span>
+        <select id="per_page" class="form-select form-select-sm w-auto">
             @foreach([5,10,25,50,100] as $size)
-            <option value="{{ $size }}" @selected($perPage==$size)>{{ $size }}</option>
+            <option value="{{ $size }}" @selected($perPage==$size)>
+                {{ $size }}
+            </option>
             @endforeach
         </select>
     </div>
@@ -78,4 +83,5 @@
     <div>
         {{ $peminjamans->links('vendor.pagination.custom') }}
     </div>
+
 </div>

@@ -3,52 +3,72 @@
 @section('title', 'Peminjaman Saya')
 
 @section('content')
-<div id="mainContent" class="main-content">
-    <div class="container-fluid px-4 py-4">
-        <h4 class="fw-bold mb-3">Peminjaman Alat Saya</h4>
+<div class="page-header mb-4">
+    <h3 class="mb-1">Peminjaman Alat Saya</h3>
+    <p class="mb-0">Kelola dan pantau status peminjaman alat</p>
+</div>
 
-        <div class="d-flex gap-2 flex-wrap">
-            <input type="text" id="search" class="form-control" placeholder="Cari alat..." style="width:180px">
+@if(session('success'))
+<div class="alert alert-success mb-3">
+    {{ session('success') }}
+</div>
+@endif
 
-            <select id="status" class="form-select" style="width:150px">
-                <option value="">Semua Status</option>
+<div class="card mb-3">
+    <div class="card-body d-flex flex-wrap gap-3 align-items-end">
+
+        <div>
+            <label class="form-label small">Cari</label>
+            <input type="text" id="search" class="form-control" placeholder="Nama alat">
+        </div>
+
+        <div>
+            <label class="form-label small">Status</label>
+            <select id="status" class="form-select">
+                <option value="">Semua</option>
                 <option value="menunggu">Menunggu</option>
                 <option value="disetujui">Disetujui</option>
                 <option value="ditolak">Ditolak</option>
                 <option value="dikembalikan">Dikembalikan</option>
                 <option value="kadaluarsa">Kadaluarsa</option>
-                <option value="dibatalkan">dibatalkan</option>
+                <option value="dibatalkan">Dibatalkan</option>
             </select>
+        </div>
 
-            <input type="date" id="date_from" class="form-control" style="width:160px">
-            <input type="date" id="date_to" class="form-control" style="width:160px">
+        <div>
+            <label class="form-label small">Dari</label>
+            <input type="date" id="date_from" class="form-control">
+        </div>
 
-            <select id="direction" class="form-select" style="width:120px">
+        <div>
+            <label class="form-label small">Sampai</label>
+            <input type="date" id="date_to" class="form-control">
+        </div>
+
+        <div>
+            <label class="form-label small">Urutan</label>
+            <select id="direction" class="form-select">
                 <option value="desc">Terbaru</option>
                 <option value="asc">Terlama</option>
             </select>
         </div>
 
-        @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+
+        @if($peminjamanItems->count())
+        <div id="peminjamanTable">
+            @include('peminjam.peminjaman.partials.table')
+        </div>
+        @else
+        <div class="text-center text-muted py-5">
+            Belum ada peminjaman
+        </div>
         @endif
 
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
-
-                @if($peminjamanItems->count())
-                <div id="peminjamanTable">
-                    @include('peminjam.peminjaman.partials.table')
-                </div>
-                @else
-                <div class="text-center text-muted py-4">
-                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                    Belum ada peminjaman yang diajukan.
-                </div>
-                @endif
-
-            </div>
-        </div>
     </div>
 </div>
 

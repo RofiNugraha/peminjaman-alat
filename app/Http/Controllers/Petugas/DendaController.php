@@ -18,14 +18,14 @@ class DendaController extends Controller
             $perPage = 10;
         }
 
-        $search   = $request->search;
-        $status   = $request->status_denda;
-        $order    = $request->direction === 'asc' ? 'asc' : 'desc';
+        $search = $request->search;
+        $status = $request->status_denda;
+        $order  = $request->direction === 'asc' ? 'asc' : 'desc';
 
         $peminjamans = Peminjaman::with([
                 'user',
                 'items.alat',
-                'pengembalian.denda'
+                'pengembalian.items.alat'
             ])
             ->where('total_denda', '>', 0)
             ->when($status, fn ($q) =>
@@ -36,8 +36,9 @@ class DendaController extends Controller
                     $u->where('nama', 'like', "%{$search}%")
                 )->orWhereHas('items.alat', fn ($a) =>
                     $a->where('nama_alat', 'like', "%{$search}%")
-                );
+                )->orWhere('kode_peminjaman', 'like', "%{$search}%");
             })
+            ->orderByRaw("CASE WHEN status_denda = 'belum' THEN 0 ELSE 1 END")
             ->orderBy('updated_at', $order)
             ->paginate($perPage)
             ->withQueryString();
@@ -49,71 +50,68 @@ class DendaController extends Controller
         return view('petugas.denda.index', compact('peminjamans', 'perPage'));
     }
 
+    public function show(Peminjaman $peminjaman)
+    {
+        $peminjaman->load([
+            'user.profilSiswa.dataSiswa',
+            'items.alat.kategoris',
+            'pengembalian.items.alat'
+        ]);
+
+        return view('petugas.denda.show', compact('peminjaman'));
+    }
+
+    public function lunas(Peminjaman $peminjaman)
+    {
+        if ($peminjaman->status_denda === 'lunas') {
+            return back()->with('error', 'Denda sudah lunas.');
+        }
+
+        if ($peminjaman->total_denda <= 0) {
+            return back()->with('error', 'Tidak ada denda.');
+        }
+
+        DB::transaction(function () use ($peminjaman) {
+            $peminjaman->update([
+                'status_denda' => 'lunas'
+            ]);
+
+            Notification::create([
+                'id_user' => $peminjaman->id_user,
+                'judul'   => 'Denda Lunas',
+                'pesan'   => 'Pembayaran denda telah diterima. Terima kasih.',
+                'notifiable_id'   => $peminjaman->id,
+                'notifiable_type' => Peminjaman::class,
+            ]);
+        });
+
+        catat_log(Auth::user()->nama . ' melunasi denda (cash) peminjaman ID ' . $peminjaman->id);
+
+        return back()->with('success', 'Denda berhasil dilunasi.');
+    }
+
     public function ingatkan(Peminjaman $peminjaman)
     {
         if ($peminjaman->status_denda === 'lunas') {
             return back()->with('error', 'Denda sudah lunas.');
         }
 
-        $denda = $peminjaman->pengembalian?->denda;
-
-        if (!$denda) {
-            return back()->with('error', 'Data denda tidak ditemukan.');
+        if ($peminjaman->total_denda <= 0) {
+            return back()->with('error', 'Tidak ada denda.');
         }
 
-        DB::transaction(function () use ($peminjaman, $denda) {
-            Notification::create([
-                'id_user' => $peminjaman->id_user,
-                'judul'   => 'Pengingat Denda',
-                'pesan'   => 'Anda memiliki denda sebesar Rp '
-                            . number_format($peminjaman->total_denda)
-                            . '. Segera lakukan pembayaran.',
-            ]);
+        Notification::create([
+            'id_user' => $peminjaman->id_user,
+            'judul'   => 'Pengingat Denda',
+            'pesan'   => 'Anda memiliki denda sebesar Rp '
+                        . number_format($peminjaman->total_denda, 0, ',', '.')
+                        . '. Segera lakukan pembayaran.',
+            'notifiable_id'   => $peminjaman->id,
+            'notifiable_type' => Peminjaman::class,
+        ]);
 
-            $denda->update([
-                'status' => 'diingatkan',
-            ]);
-        
-            $peminjaman->update([
-                'status_denda' => 'belum'
-            ]);
-        });
+        catat_log(Auth::user()->nama . ' mengirim pengingat denda ke peminjaman ID ' . $peminjaman->id);
 
-        catat_log(Auth::user()->nama . ' mengingatkan denda peminjaman ID ' . $peminjaman->id);
-
-        return back()->with('success', 'Pengingat denda berhasil dikirim.');
-    }
-
-    public function lunas(Peminjaman $peminjaman)
-    {
-        if ($peminjaman->status_denda === 'lunas') {
-            return back()->with('error', 'Denda sudah ditandai lunas.');
-        }
-
-        $denda = $peminjaman->pengembalian?->denda;
-
-        if (!$denda) {
-            return back()->with('error', 'Data denda tidak ditemukan.');
-        }
-
-        DB::transaction(function () use ($peminjaman, $denda) {
-            $peminjaman->update([
-                'status_denda' => 'lunas'
-            ]);
-
-            $denda->update([
-                'status' => 'dibayar',
-            ]);
-
-            Notification::create([
-                'id_user' => $peminjaman->id_user,
-                'judul'   => 'Denda Lunas',
-                'pesan'   => 'Terima kasih. Denda peminjaman Anda telah dinyatakan lunas.',
-            ]);
-        });
-
-        catat_log(Auth::user()->nama . ' menandai denda lunas untuk peminjaman ID ' . $peminjaman->id);
-
-        return back()->with('success', 'Denda berhasil ditandai sebagai lunas.');
+        return back()->with('success', 'Pengingat berhasil dikirim.');
     }
 }

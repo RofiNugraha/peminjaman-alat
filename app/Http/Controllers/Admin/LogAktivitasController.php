@@ -27,7 +27,7 @@ class LogAktivitasController extends Controller
             [$dateFrom, $dateTo] = [$dateTo, $dateFrom];
         }
 
-        $query = LogAktivitas::with('user')
+        $query = LogAktivitas::with('users')
             ->when($search, function ($q) use ($search) {
                 $q->whereHas('user', fn($u) => $u->where('nama', 'like', "%{$search}%"))
                 ->orWhere('aktivitas', 'like', "%{$search}%");

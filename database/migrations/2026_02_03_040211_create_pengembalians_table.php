@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('pengembalians', function (Blueprint $table) {
             $table->id();
             $table->foreignId('id_peminjaman')->constrained('peminjamans');
+            $table->foreignId('id_petugas')->constrained('users');
             $table->date('tgl_dikembalikan');
             $table->integer('hari_telat')->default(0);
+            $table->integer('denda_telat')->default(0);
             $table->timestamps();
         });
     }

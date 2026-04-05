@@ -3,45 +3,73 @@
 @section('title', 'Persetujuan Peminjaman')
 
 @section('content')
-<div id="mainContent" class="main-content">
-    <div class="container-fluid px-4 py-4">
-        <h4 class="fw-bold mb-3">Daftar Pengajuan Peminjaman</h4>
+<div class="page-header mb-4">
+    <h3 class="mb-1">Persetujuan Peminjaman</h3>
+    <p class="mb-0">Kelola dan proses pengajuan peminjaman alat</p>
+</div>
 
-        @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
+@if(session('success'))
+<div class="alert alert-success mb-3">
+    {{ session('success') }}
+</div>
+@endif
 
-        {{-- Filter bar --}}
-        <div class="d-flex gap-2 flex-wrap mb-3">
-            <input type="text" id="search" class="form-control" placeholder="Cari nama atau alat..."
-                style="width:200px">
+@if(session('error'))
+<div class="alert alert-danger mb-3">
+    {{ session('error') }}
+</div>
+@endif
 
-            <select id="status" class="form-select" style="width:150px">
-                <option value="">Default</option>
-                <option value="menunggu">Menunggu</option>
-                <option value="disetujui">Disetujui</option>
-                <option value="ditolak">Ditolak</option>
-                <option value="dibatalkan">Dibatalkan</option>
-                <option value="kadaluarsa">Kadaluarsa</option>
-                <option value="dikembalikan">Dikembalikan</option>
-            </select>
+<div class="card mb-3">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-end gap-3">
 
-            <input type="date" id="date_from" class="form-control" style="width:160px">
-            <input type="date" id="date_to" class="form-control" style="width:160px">
+        <form onsubmit="return false;" class="d-flex flex-wrap gap-2 align-items-end">
 
-            <select id="direction" class="form-select" style="width:120px">
-                <option value="desc">Terbaru</option>
-                <option value="asc">Terlama</option>
-            </select>
-        </div>
-
-        <div class="card shadow-sm border-0">
-            <div class="card-body" id="peminjamanTable">
-                @include('petugas.peminjaman.partials.table', ['peminjamans' => $peminjamans, 'perPage' => $perPage])
+            <div>
+                <label class="form-label small">Cari</label>
+                <input type="text" id="search" class="form-control" placeholder="Nama peminjam / alat / kode">
             </div>
+
+            <div>
+                <label class="form-label small">Status</label>
+                <select id="status" class="form-select">
+                    <option value="">Semua</option>
+                    <option value="menunggu">Menunggu</option>
+                    <option value="disetujui">Disetujui</option>
+                    <option value="ditolak">Ditolak</option>
+                    <option value="dibatalkan">Dibatalkan</option>
+                    <option value="kadaluarsa">Kadaluarsa</option>
+                    <option value="dikembalikan">Dikembalikan</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="form-label small">Dari Tanggal</label>
+                <input type="date" id="date_from" class="form-control">
+            </div>
+
+            <div>
+                <label class="form-label small">Sampai Tanggal</label>
+                <input type="date" id="date_to" class="form-control">
+            </div>
+
+            <div>
+                <label class="form-label small">Urutan</label>
+                <select id="direction" class="form-select">
+                    <option value="desc">Terbaru</option>
+                    <option value="asc">Terlama</option>
+                </select>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div id="peminjamanTable">
+            @include('petugas.peminjaman.partials.table', ['peminjamans' => $peminjamans, 'perPage' => $perPage])
         </div>
     </div>
 </div>

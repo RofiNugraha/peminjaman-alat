@@ -16,7 +16,7 @@ class KategoriController extends Controller
             $perPage = 10;
         }
 
-        $search    = $request->get('search');
+        $search = $request->get('search');
         $direction = $request->get('direction', 'desc');
 
         if (!in_array($direction, ['asc','desc'])) {
@@ -24,9 +24,12 @@ class KategoriController extends Controller
         }
 
         $kategoris = Kategori::query()
+            ->withCount('alats')
             ->when($search, function ($q) use ($search) {
-                $q->where('nama_kategori', 'like', "%{$search}%")
-                ->orWhere('keterangan', 'like', "%{$search}%");
+                $q->where(function ($query) use ($search) {
+                    $query->where('nama_kategori','like',"%{$search}%")
+                    ->orWhere('keterangan','like',"%{$search}%");
+                });
             })
             ->orderBy('created_at', $direction)
             ->paginate($perPage)
@@ -34,10 +37,10 @@ class KategoriController extends Controller
             ->onEachSide(1);
 
         if ($request->ajax()) {
-            return view('admin.kategori.partials.table', compact('kategoris', 'perPage'))->render();
+            return view('admin.kategori.partials.table', compact('kategoris','perPage'))->render();
         }
 
-        return view('admin.kategori.index', compact('kategoris', 'perPage'));
+        return view('admin.kategori.index', compact('kategoris','perPage'));
     }
 
     public function create()
@@ -59,11 +62,18 @@ class KategoriController extends Controller
 
         $kategori = Kategori::create($validated);
 
-        catat_log(Auth::user()->nama . ' menambahkan kategori baru: ' . $kategori->nama_kategori);
+        catat_log(Auth::user()->nama . ' menambahkan kategori: ' . $kategori->nama_kategori);
 
         return redirect()
             ->route('kategori.index')
-            ->with('success','Kategori berhasil ditambahkan.');
+            ->with('success','Kategori berhasil ditambahkan');
+    }
+
+    public function show(Kategori $kategori)
+    {
+        $kategori->loadCount('alats');
+
+        return view('admin.kategori.show', compact('kategori'));
     }
 
     public function edit(Kategori $kategori)
@@ -76,27 +86,32 @@ class KategoriController extends Controller
         $validated = $request->validate([
             'nama_kategori' => 'required|string|max:100|unique:kategoris,nama_kategori,' . $kategori->id,
             'keterangan'    => 'nullable|string|max:255',
+        ], [
+            'nama_kategori.required' => 'Nama kategori wajib diisi.',
+            'nama_kategori.unique'   => 'Nama kategori sudah ada.',
+            'nama_kategori.max'      => 'Maksimal 100 karakter.',
+            'keterangan.max'         => 'Keterangan maksimal 255 karakter.',
         ]);
 
         $kategori->update($validated);
 
-        catat_log(Auth::user()->nama . ' mengubah data kategori: ' . $kategori->nama_kategori);
+        catat_log(Auth::user()->nama . ' mengubah kategori: ' . $kategori->nama_kategori);
 
-        return redirect()
-            ->route('kategori.index')
-            ->with('success','Kategori berhasil diperbarui.');
+        return redirect()->route('kategori.index')->with('success','Kategori berhasil diperbarui');
     }
 
     public function destroy(Kategori $kategori)
     {
-        if ($kategori->alat()->count() > 0) {
-            return back()->with('error', 'Kategori tidak dapat dihapus karena masih memiliki alat.');
+        if ($kategori->alats()->count() > 0) {
+            return back()->with('error','Kategori tidak dapat dihapus karena masih memiliki alat.');
         }
 
+        $nama = $kategori->nama_kategori;
+        
         $kategori->delete();
 
-        catat_log(Auth::user()->nama . ' menghapus kategori: ' . $kategori->nama_kategori);
+        catat_log(Auth::user()->nama . ' menghapus kategori: ' . $nama);
 
-        return back()->with('success', 'Kategori berhasil dihapus.');
+        return redirect()->route('kategori.index')->with('success','Kategori berhasil dihapus');
     }
 }

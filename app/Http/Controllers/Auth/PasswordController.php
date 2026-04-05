@@ -21,6 +21,10 @@ class PasswordController extends Controller
     {
         $request->validate([
             'email' => 'required|email|exists:users,email'
+        ], [
+            'email.required' => 'Email wajib diisi',
+            'email.email'    => 'Format email tidak valid',
+            'email.exists'   => 'Email tidak terdaftar di sistem'
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -51,6 +55,11 @@ class PasswordController extends Controller
         $request->validate([
             'email' => 'required|email',
             'otp'   => 'required|digits:6'
+        ], [
+            'email.required' => 'Email wajib diisi',
+            'email.email'    => 'Format email tidak valid',
+            'otp.required'   => 'Kode OTP wajib diisi',
+            'otp.digits'     => 'Kode OTP harus 6 digit'
         ]);
 
         $user = User::where('email', $request->email)

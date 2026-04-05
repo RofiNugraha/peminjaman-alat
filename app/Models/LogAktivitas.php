@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class LogAktivitas extends Model
 {
     protected $table = 'log_aktivitas';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -15,7 +16,7 @@ class LogAktivitas extends Model
         'waktu',
     ];
 
-    public function user()
+    public function users()
     {
         return $this->belongsTo(User::class, 'id_user');
     }

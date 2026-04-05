@@ -16,10 +16,9 @@ class AlatController extends Controller
         $perPage  = in_array($request->per_page, [5, 10, 25, 50, 100]) ? $request->per_page : 10;
         $search   = $request->search;
         $kategori = $request->kategori;
-        $kondisi  = $request->kondisi;
         $order    = in_array($request->order, ['asc', 'desc']) ? $request->order : 'desc';
 
-        $query = Alat::with('kategori');
+        $query = Alat::with('kategoris');
 
         if ($search) {
             $query->where('nama_alat', 'like', "%{$search}%");
@@ -27,10 +26,6 @@ class AlatController extends Controller
 
         if ($kategori) {
             $query->where('id_kategori', $kategori);
-        }
-
-        if ($kondisi) {
-            $query->where('kondisi', $kondisi);
         }
 
         $alats = $query
@@ -59,9 +54,8 @@ class AlatController extends Controller
             'id_kategori'   => 'required|exists:kategoris,id',
             'nama_alat'     => 'required|string|max:100',
             'stok'          => 'required|integer|min:0',
-            'kondisi'       => 'required|in:Baik,Rusak,Hilang',
-            'gambar'        => 'required|image|mimes:jpg,jpeg,png|max:2048',
             'denda_per_hari' => 'required|integer|min:0',
+            'gambar'        => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ], [
             'id_kategori.required' => 'Kategori wajib dipilih.',
             'id_kategori.exists'   => 'Kategori tidak valid.',
@@ -71,15 +65,12 @@ class AlatController extends Controller
             'nama_alat.max'      => 'Nama alat maksimal 100 karakter.',
 
             'stok.required' => 'Stok wajib diisi.',
-            'stok.integer'  => 'Stok harus berupa angka.',
+            'stok.integer'  => 'Stok tidak valid dan harus berupa angka.',
             'stok.min'      => 'Stok tidak boleh kurang dari 0.',
 
             'denda_per_hari.required' => 'Harga Denda wajib diisi.',
-            'denda_per_hari.integer'  => 'Harga Denda harus berupa angka.',
+            'denda_per_hari.integer'  => 'Harga Denda tidak valid dan harus berupa angka.',
             'denda_per_hari.min'      => 'Harga Denda tidak boleh kurang dari 0.',
-
-            'kondisi.required' => 'Kondisi alat wajib dipilih.',
-            'kondisi.in'       => 'Kondisi alat tidak valid.',
 
             'gambar.required' => 'Gambar alat wajib diunggah.',
             'gambar.image'    => 'File harus berupa gambar.',
@@ -87,28 +78,19 @@ class AlatController extends Controller
             'gambar.max'      => 'Ukuran gambar maksimal 2 MB.',
         ]);
 
-        if ($request->kondisi !== 'Baik' && $request->stok > 0) {
-            return back()
-                ->withErrors(['stok' => 'Stok harus 0 jika kondisi alat Rusak atau Hilang.'])
-                ->withInput();
-        }
-
         $path = $request->file('gambar')->store('alat', 'public');
 
         $alat = Alat::create([
             'id_kategori'       => $request->id_kategori,
             'nama_alat'         => $request->nama_alat,
             'stok'              => $request->stok,
-            'kondisi'           => $request->kondisi,
-            'gambar'            => $path,
             'denda_per_hari'    => $request->denda_per_hari,
+            'gambar'            => $path,
         ]);
 
-        catat_log(Auth::user()->nama . ' menambahkan alat baru: ' . $alat->nama_alat);
-        
-        return redirect()
-        ->route('alat.index')
-        ->with('success', 'Alat berhasil ditambahkan.');
+        catat_log(Auth::user()->nama . ' menambahkan alat ' . $alat->nama_alat);
+
+        return redirect()->route('alat.index')->with('success', 'Alat berhasil ditambahkan.');
     }
 
     public function edit(Alat $alat)
@@ -117,15 +99,19 @@ class AlatController extends Controller
         return view('admin.alat.edit', compact('alat', 'kategoris'));
     }
 
+    public function show(Alat $alat)
+    {
+        return view('admin.alat.show', compact('alat'));
+    }
+
     public function update(Request $request, Alat $alat)
     {
         $request->validate([
             'id_kategori'       => 'required|exists:kategoris,id',
             'nama_alat'         => 'required|string|max:100',
             'stok'              => 'required|integer|min:0',
-            'kondisi'           => 'required|in:Baik,Rusak,Hilang',
-            'gambar'            => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'denda_per_hari'    => 'required|integer|min:0',
+            'gambar'            => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ], [
             'id_kategori.required' => 'Kategori wajib dipilih.',
             'id_kategori.exists'   => 'Kategori tidak valid.',
@@ -134,56 +120,44 @@ class AlatController extends Controller
             'nama_alat.max'      => 'Nama alat maksimal 100 karakter.',
 
             'stok.required' => 'Stok wajib diisi.',
-            'stok.integer'  => 'Stok harus berupa angka.',
+            'stok.integer'  => 'Stok tidak valid dan harus berupa angka.',
             'stok.min'      => 'Stok tidak boleh kurang dari 0.',
 
             'denda_per_hari.required' => 'Harga Denda wajib diisi.',
-            'denda_per_hari.integer'  => 'Harga Denda harus berupa angka.',
+            'denda_per_hari.integer'  => 'Harga Denda tidak valid dan harus berupa angka.',
             'denda_per_hari.min'      => 'Harga Denda tidak boleh kurang dari 0.',
-            
-            'kondisi.required' => 'Kondisi alat wajib dipilih.',
-            'kondisi.in'       => 'Kondisi alat tidak valid.',
 
             'gambar.image' => 'File harus berupa gambar.',
             'gambar.mimes' => 'Format gambar harus JPG, JPEG, atau PNG.',
             'gambar.max'   => 'Ukuran gambar maksimal 2 MB.',
         ]);
 
-        
+
         $data = $request->only([
             'id_kategori',
             'nama_alat',
             'stok',
-            'kondisi',
             'denda_per_hari',
-            ]);
-            
-            if ($request->hasFile('gambar')) {
-                if ($alat->gambar && Storage::disk('public')->exists($alat->gambar)) {
-                    Storage::disk('public')->delete($alat->gambar);
-                }
-                
-                $data['gambar'] = $request->file('gambar')->store('alat', 'public');
+        ]);
+
+        if ($request->hasFile('gambar')) {
+            if ($alat->gambar && Storage::disk('public')->exists($alat->gambar)) {
+                Storage::disk('public')->delete($alat->gambar);
             }
-                    
-            if ($request->kondisi !== 'Baik' && $request->stok > 0) {
-                return back()
-                    ->withErrors(['stok' => 'Stok harus 0 jika kondisi alat Rusak atau Hilang.'])
-                    ->withInput();
-            }
-            
+
+            $data['gambar'] = $request->file('gambar')->store('alat', 'public');
+        }
+
         $alat->update($data);
 
         catat_log(Auth::user()->nama . ' mengubah data alat: ' . $alat->nama_alat);
-        
-        return redirect()
-            ->route('alat.index')
-            ->with('success', 'Alat berhasil diperbarui.');
+
+        return redirect()->route('alat.index')->with('success', 'Alat berhasil diperbarui.');
     }
 
     public function destroy(Alat $alat)
     {
-        if ($alat->items()->exists()) {
+        if ($alat->peminjamanItems()->exists()) {
             return back()->with('error', 'Alat tidak dapat dihapus karena memiliki riwayat peminjaman.');
         }
 
@@ -193,10 +167,8 @@ class AlatController extends Controller
 
         $alat->delete();
 
-        catat_log(Auth::user()->nama . ' menghapus alat: ' . $alat->nama_alat);
+        catat_log(Auth::user()->nama . ' menghapus alat ' . $alat->nama_alat);
 
-        return redirect()
-            ->route('alat.index')
-            ->with('success', 'Alat berhasil dihapus.');
+        return redirect()->route('alat.index')->with('success', 'Alat berhasil dihapus.');
     }
 }

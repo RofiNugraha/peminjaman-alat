@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\PeminjamanItem;
+use App\Models\Peminjaman;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -33,38 +33,56 @@ class PeminjamanController extends Controller
         $statusNonAktif = ['dibatalkan','ditolak','kadaluarsa','dikembalikan'];
         $statusFilter = $tab === 'aktif' ? $statusAktif : $statusNonAktif;
 
-        $query = PeminjamanItem::with(['alat.kategori', 'peminjaman.user'])
-            ->whereHas('peminjaman', function ($q) use ($search, $status, $dateFrom, $dateTo, $statusFilter) {
-                $q->whereIn('status', $statusFilter);
+        $query = Peminjaman::with([
+            'user.profilSiswa.dataSiswa',
+            'items.alat.kategoris'
+        ])->whereIn('status', $statusFilter);
 
-                if ($search) {
-                    $q->where(function ($sub) use ($search) {
-                        $sub->whereHas('user', fn($u) => $u->where('nama', 'like', "%{$search}%"))
-                            ->orWhereHas('items.alat', fn($a) => $a->where('nama_alat', 'like', "%{$search}%"));
-                    });
-                }
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('kode_peminjaman', 'like', "%{$search}%")
 
-                if ($status && in_array($status, $statusFilter)) {
-                    $q->where('status', $status);
-                }
+                ->orWhereHas('user', function ($u) use ($search) {
+                    $u->where('nama', 'like', "%{$search}%");
+                })
 
-                if ($dateFrom && $dateTo) {
-                    $q->whereBetween(DB::raw('DATE(tgl_pinjam)'), [$dateFrom, $dateTo]);
-                } elseif ($dateFrom) {
-                    $q->whereDate('tgl_pinjam', '>=', $dateFrom);
-                } elseif ($dateTo) {
-                    $q->whereDate('tgl_pinjam', '<=', $dateTo);
-                }
+                ->orWhereHas('user.profilSiswa.dataSiswa', function ($ds) use ($search) {
+                    $ds->where('nama', 'like', "%{$search}%");
+                });
             });
+        }
 
-        $peminjamanItems = $query->orderBy('created_at', $direction)
+        if ($status && in_array($status, $statusFilter)) {
+            $query->where('status', $status);
+        }
+
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween(DB::raw('DATE(tgl_pinjam)'), [$dateFrom, $dateTo]);
+        } elseif ($dateFrom) {
+            $query->whereDate('tgl_pinjam', '>=', $dateFrom);
+        } elseif ($dateTo) {
+            $query->whereDate('tgl_pinjam', '<=', $dateTo);
+        }
+
+        $peminjamans = $query->orderBy('created_at', $direction)
             ->paginate($perPage)
             ->appends($request->only(['tab','search','status','date_from','date_to','direction','per_page']));
 
         if ($request->ajax()) {
-            return view('admin.peminjaman.partials.table', compact('peminjamanItems','perPage','tab'))->render();
+            return view('admin.peminjaman.partials.table', compact('peminjamans','perPage','tab'))->render();
         }
 
-        return view('admin.peminjaman.index', compact('peminjamanItems','perPage','tab'));
+        return view('admin.peminjaman.index', compact('peminjamans','perPage','tab'));
+    }
+
+    public function show($id)
+    {
+        $peminjaman = Peminjaman::with([
+            'user.profilSiswa.dataSiswa',
+            'items.alat.kategoris',
+            'pengembalian.items.alat'
+        ])->findOrFail($id);
+
+        return view('admin.peminjaman.show', compact('peminjaman'));
     }
 }

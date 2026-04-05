@@ -1,67 +1,90 @@
 <div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead class="table-light">
+    <table class="table table-modern align-middle mb-0">
+        <thead>
             <tr>
-                <th>No</th>
-                <th>Nama Pengguna</th>
-                <th>Alat</th>
-                <th>Kategori</th>
+                <th width="60">No</th>
+                <th>Kode</th>
+                <th>Nama</th>
                 <th>Tanggal Pinjam</th>
                 <th>Tanggal Kembali</th>
-                <th>
-                    <center>Status</center>
-                </th>
+                <th width="140">Status</th>
+                <th width="100" class="text-center">Aksi</th>
             </tr>
         </thead>
+
         <tbody>
+            @forelse ($peminjamans as $index => $p)
+
             @php
-            $no = ($peminjamanItems->currentPage()-1) * $peminjamanItems->perPage() + 1;
+            $colors = [
+            'menunggu' => 'warning',
+            'disetujui' => 'success',
+            'ditolak' => 'danger',
+            'dibatalkan' => 'secondary',
+            'dikembalikan' => 'info',
+            'kadaluarsa' => 'dark'
+            ];
             @endphp
 
-            @forelse ($peminjamanItems as $item)
             <tr>
-                <td>{{ $no++ }}</td>
-                <td>{{ $item->peminjaman->user->nama ?? '-' }}</td>
-                <td>{{ $item->alat->nama_alat }}</td>
-                <td>{{ $item->alat->kategori->nama_kategori }}</td>
-                <td>{{ \Carbon\Carbon::parse($item->peminjaman->tgl_pinjam)->format('d M Y') }}</td>
-                <td>{{ \Carbon\Carbon::parse($item->peminjaman->tgl_kembali)->format('d M Y') }}</td>
+                <td class="text-muted">
+                    {{ ($peminjamans->currentPage() - 1) * $peminjamans->perPage() + $index + 1 }}
+                </td>
+
+                <td class="fw-semibold">{{ $p->kode_peminjaman }}</td>
+
                 <td>
-                    <center>
-                        <span class="badge bg-{{ match($item->peminjaman->status) {
-                                'menunggu' => 'warning',
-                                'disetujui' => 'success',
-                                'ditolak' => 'danger',
-                                'dibatalkan' => 'secondary',
-                                'dikembalikan' => 'info',
-                                'kadaluarsa' => 'dark',
-                                default => 'secondary'
-                            } }}">
-                            {{ ucfirst($item->peminjaman->status) }}
-                        </span>
-                    </center>
+                    {{ $p->user->profilSiswa->dataSiswa->nama ?? $p->user->nama ?? '-' }}
+                </td>
+
+                <td class="text-muted">
+                    {{ $p->tgl_pinjam->format('d M Y') }}
+                </td>
+
+                <td class="text-muted">
+                    {{ $p->tgl_kembali->format('d M Y') }}
+                </td>
+
+                <td>
+                    <span
+                        class="badge bg-{{ $colors[$p->status] ?? 'secondary' }} bg-opacity-10 text-{{ $colors[$p->status] ?? 'secondary' }}">
+                        {{ ucfirst($p->status) }}
+                    </span>
+                </td>
+
+                <td class="text-center">
+                    <a href="{{ route('admin.peminjaman.show',$p->id) }}" class="btn btn-sm btn-light border">
+                        <i class="bi bi-eye"></i>
+                    </a>
                 </td>
             </tr>
+
             @empty
             <tr>
-                <td colspan="7" class="text-center text-muted">Tidak ada data peminjaman.</td>
+                <td colspan="7" class="text-center text-muted py-4">
+                    Tidak ada data peminjaman
+                </td>
             </tr>
             @endforelse
         </tbody>
     </table>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mt-3 flex-wrap">
+<div class="d-flex flex-wrap justify-content-between align-items-center p-3 border-top">
+
     <div class="d-flex align-items-center gap-2">
-        <label for="per_page" class="mb-0">Data per halaman:</label>
-        <select id="per_page" class="form-select w-auto">
+        <span class="small text-muted">Data per halaman</span>
+        <select id="per_page" class="form-select form-select-sm w-auto">
             @foreach([5,10,25,50,100] as $size)
-            <option value="{{ $size }}" @selected($peminjamanItems->perPage() == $size)>{{ $size }}</option>
+            <option value="{{ $size }}" @selected($peminjamans->perPage() == $size)>
+                {{ $size }}
+            </option>
             @endforeach
         </select>
     </div>
 
     <div>
-        {{ $peminjamanItems->links('vendor.pagination.custom') }}
+        {{ $peminjamans->links('vendor.pagination.custom') }}
     </div>
+
 </div>

@@ -3,23 +3,46 @@
 @section('title', 'Log Aktivitas Sistem')
 
 @section('content')
-<div id="mainContent" class="main-content">
-    <div class="container-fluid px-4 py-4">
-        <h4 class="fw-bold mb-3">Log Aktivitas Sistem</h4>
+<div class="page-header mb-4">
+    <h3 class="mb-1">Log Aktivitas Sistem</h3>
+    <p class="mb-0">Riwayat aktivitas pengguna dalam sistem</p>
+</div>
 
-        <div class="d-flex gap-2 flex-wrap mb-3">
-            <input type="text" id="search" class="form-control" placeholder="Cari nama atau aktivitas..."
-                style="width:220px">
+<div class="card mb-3">
+    <div class="card-body">
 
-            <input type="date" id="date_from" class="form-control" style="width:160px">
-            <input type="date" id="date_to" class="form-control" style="width:160px">
+        <form onsubmit="return false;" class="row g-3 align-items-end">
 
-            <select id="direction" class="form-select" style="width:130px">
-                <option value="desc">Terbaru</option>
-                <option value="asc">Terlama</option>
-            </select>
-        </div>
+            <div class="col-md-4">
+                <label class="form-label small">Cari</label>
+                <input type="text" id="search" class="form-control" placeholder="Nama pengguna atau aktivitas">
+            </div>
 
+            <div class="col-md-2">
+                <label class="form-label small">Dari Tanggal</label>
+                <input type="date" id="date_from" class="form-control">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small">Sampai Tanggal</label>
+                <input type="date" id="date_to" class="form-control">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small">Urutan</label>
+                <select id="direction" class="form-select">
+                    <option value="desc">Terbaru</option>
+                    <option value="asc">Terlama</option>
+                </select>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
         <div id="logTable">
             @include('admin.log_aktivitas.partials.table', ['logs' => $logs])
         </div>

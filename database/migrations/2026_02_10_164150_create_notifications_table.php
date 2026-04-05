@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('judul');
             $table->text('pesan');
             $table->boolean('dibaca')->default(false);
+            $table->unsignedBigInteger('notifiable_id')->nullable();
+            $table->string('notifiable_type')->nullable();
             $table->timestamps();
         });
     }

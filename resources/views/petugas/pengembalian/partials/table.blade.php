@@ -1,55 +1,77 @@
 <div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead class="table-light">
+    <table class="table table-modern align-middle mb-0">
+        <thead>
             <tr>
-                <th>No</th>
+                <th width="60">No</th>
+                <th>Kode</th>
                 <th>Peminjam</th>
                 <th>Alat</th>
                 <th>Tanggal Pinjam</th>
                 <th>Jatuh Tempo</th>
-                <th>Aksi</th>
+                <th width="120">Status</th>
+                <th width="100" class="text-center">Aksi</th>
             </tr>
         </thead>
         <tbody>
-            @php $no = ($peminjamans->currentPage()-1) * $peminjamans->perPage() + 1; @endphp
-            @forelse ($peminjamans as $p)
+            @forelse ($peminjamans as $index => $p)
             <tr>
-                <td>{{ $no++ }}</td>
+                <td class="text-muted">
+                    {{ ($peminjamans->currentPage()-1) * $peminjamans->perPage() + $index + 1 }}
+                </td>
+
+                <td class="fw-medium">{{ $p->kode_peminjaman }}</td>
+
                 <td>{{ $p->user->nama }}</td>
-                <td>
+
+                <td class="text-muted small">
                     @foreach ($p->items as $item)
                     <div>{{ $item->alat->nama_alat }} ({{ $item->qty }})</div>
                     @endforeach
                 </td>
+
                 <td>{{ \Carbon\Carbon::parse($p->tgl_pinjam)->format('d M Y') }}</td>
+
                 <td>{{ \Carbon\Carbon::parse($p->tgl_kembali)->format('d M Y') }}</td>
+
                 <td>
-                    <form action="{{ route('petugas.pengembalian.store', $p->id) }}" method="POST"
-                        onsubmit="return confirm('Apakah Anda yakin ingin menyelesaikan pengembalian ini?')">
-                        @csrf
-                        <button class="btn btn-primary btn-sm">Selesai</button>
-                    </form>
+                    <span class="badge bg-success bg-opacity-10 text-success">
+                        Disetujui
+                    </span>
+                </td>
+
+                <td class="text-center">
+                    <a href="{{ route('petugas.pengembalian.show', $p->id) }}" class="btn btn-sm btn-light border">
+                        <i class="bi bi-eye"></i>
+                    </a>
                 </td>
             </tr>
+
             @empty
             <tr>
-                <td colspan="6" class="text-center text-muted py-3">Tidak ada data pengembalian.</td>
+                <td colspan="8" class="text-center text-muted py-4">
+                    Tidak ada data pengembalian
+                </td>
             </tr>
             @endforelse
         </tbody>
     </table>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mt-3 flex-wrap">
+<div class="d-flex flex-wrap justify-content-between align-items-center p-3 border-top">
+
     <div class="d-flex align-items-center gap-2">
-        <label>Data per halaman:</label>
-        <select id="per_page" class="form-select w-auto">
+        <span class="small text-muted">Data per halaman</span>
+        <select id="per_page" class="form-select form-select-sm w-auto">
             @foreach([5,10,25,50,100] as $size)
-            <option value="{{ $size }}" @selected($perPage==$size)>{{ $size }}</option>
+            <option value="{{ $size }}" @selected($perPage==$size)>
+                {{ $size }}
+            </option>
             @endforeach
         </select>
     </div>
+
     <div>
         {{ $peminjamans->links('vendor.pagination.custom') }}
     </div>
+
 </div>

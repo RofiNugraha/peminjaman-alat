@@ -9,6 +9,6 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('peminjaman:expire')
-    ->dailyAt('00:05')
+    ->everyMinute()
     ->withoutOverlapping()
     ->runInBackground();

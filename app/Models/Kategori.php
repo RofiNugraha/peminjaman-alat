@@ -13,7 +13,7 @@ class Kategori extends Model
         'keterangan',
     ];
 
-    public function alat()
+    public function alats()
     {
         return $this->hasMany(Alat::class, 'id_kategori');
     }

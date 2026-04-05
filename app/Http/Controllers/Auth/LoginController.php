@@ -41,7 +41,9 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, false)) {
             $request->session()->regenerate();
             catat_log(Auth::user()->nama . ' login ke sistem');
-            return redirect()->route('dashboard');
+
+            return redirect()->route('dashboard')
+                ->with('success', 'Login berhasil, selamat datang ' . Auth::user()->nama);
         }
 
         sleep(1);

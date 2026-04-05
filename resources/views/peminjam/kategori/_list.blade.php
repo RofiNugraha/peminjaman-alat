@@ -1,35 +1,58 @@
-<div class="row g-4">
-    @forelse ($kategoris as $kategori)
-    <div class="col-md-3">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-body text-center">
-                <h4 class="fw-semibold mb-2">
-                    {{ $kategori->nama_kategori }}
-                </h4>
+@if($kategoris->count())
+<div class="row g-3">
 
-                <p class="text-muted mb-3">
-                    {{ $kategori->keterangan }}
-                </p>
+    @foreach ($kategoris as $kategori)
+    <div class="col-xl-3 col-lg-4 col-md-6">
+        <div class="card h-100">
 
-                <p class="text-muted mb-3">
-                    {{ $kategori->total_stok }} alat tersedia
-                </p>
+            <div class="card-body d-flex flex-column">
 
-                @if ($kategori->total_stok > 0)
-                <a href="{{ route('peminjam.kategori.show', $kategori->id) }}" class="btn btn-primary btn-sm">
-                    Lihat Alat
-                </a>
-                @else
-                <button class="btn btn-secondary btn-sm" disabled>
-                    Stok Habis
-                </button>
-                @endif
+                <div class="mb-2">
+                    <h6 class="fw-semibold mb-1">{{ $kategori->nama_kategori }}</h6>
+                    <p class="text-muted small mb-0">
+                        {{ $kategori->keterangan ?? '-' }}
+                    </p>
+                </div>
+
+                <div class="mt-auto">
+
+                    <div class="mb-3">
+                        <span class="badge bg-primary bg-opacity-10 text-primary">
+                            {{ $kategori->total_stok }} tersedia
+                        </span>
+                    </div>
+
+                    <a href="{{ route('peminjam.kategori.show', $kategori->id) }}" class="btn btn-primary w-100 btn-sm">
+                        Lihat Alat
+                    </a>
+
+                </div>
+
             </div>
+
         </div>
     </div>
-    @empty
-    <div class="col-12 text-center text-muted">
-        Tidak ada kategori tersedia
+    @endforeach
+
+</div>
+@else
+<div class="text-center text-muted py-5">
+    Tidak ada kategori ditemukan
+</div>
+@endif
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mt-4 pt-3 border-top">
+
+    <div class="small text-muted">
+        @if($kategoris->count())
+        Menampilkan {{ $kategoris->firstItem() }} - {{ $kategoris->lastItem() }} dari {{ $kategoris->total() }} data
+        @else
+        Menampilkan 0 data
+        @endif
     </div>
-    @endforelse
+
+    <div>
+        {{ $kategoris->links('vendor.pagination.custom') }}
+    </div>
+
 </div>

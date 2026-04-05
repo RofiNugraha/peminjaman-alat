@@ -3,40 +3,65 @@
 @section('title', 'Monitoring Peminjaman')
 
 @section('content')
-<div id="mainContent" class="main-content">
-    <div class="container-fluid px-4 py-4">
-        <h4 class="fw-bold mb-3">Monitoring Peminjaman Seluruh Pengguna</h4>
+<div class="page-header mb-4">
+    <h3 class="mb-1">Monitoring Peminjaman</h3>
+    <p class="mb-0">Pantau seluruh aktivitas peminjaman pengguna</p>
+</div>
 
-        <ul class="nav nav-tabs mb-3" id="peminjamanTabs">
-            <li class="nav-item">
-                <button class="nav-link {{ $tab === 'aktif' ? 'active' : '' }}" data-tab="aktif">Aktif</button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link {{ $tab === 'nonaktif' ? 'active' : '' }}" data-tab="nonaktif">Nonaktif</button>
-            </li>
-        </ul>
+<ul class="nav nav-tabs mb-3" id="peminjamanTabs">
+    <li class="nav-item">
+        <button class="nav-link {{ $tab === 'aktif' ? 'active' : '' }}" data-tab="aktif">Aktif</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link {{ $tab === 'nonaktif' ? 'active' : '' }}" data-tab="nonaktif">Nonaktif</button>
+    </li>
+</ul>
 
-        <div class="d-flex gap-2 flex-wrap mb-3">
-            <input type="text" id="search" class="form-control" placeholder="Cari alat atau pengguna..."
-                style="width:200px">
+<div class="card mb-3">
+    <div class="card-body">
 
-            <select id="status" class="form-select" style="width:160px"></select>
+        <div class="d-flex flex-wrap gap-3 align-items-end">
 
-            <input type="date" id="date_from" class="form-control" style="width:160px">
-            <input type="date" id="date_to" class="form-control" style="width:160px">
+            <div>
+                <label class="form-label small">Cari</label>
+                <input type="text" id="search" class="form-control" placeholder="Kode / nama pengguna">
+            </div>
 
-            <select id="direction" class="form-select" style="width:120px">
-                <option value="desc">Terbaru</option>
-                <option value="asc">Terlama</option>
-            </select>
+            <div>
+                <label class="form-label small">Status</label>
+                <select id="status" class="form-select"></select>
+            </div>
+
+            <div>
+                <label class="form-label small">Dari Tanggal</label>
+                <input type="date" id="date_from" class="form-control">
+            </div>
+
+            <div>
+                <label class="form-label small">Sampai</label>
+                <input type="date" id="date_to" class="form-control">
+            </div>
+
+            <div>
+                <label class="form-label small">Urutan</label>
+                <select id="direction" class="form-select">
+                    <option value="desc">Terbaru</option>
+                    <option value="asc">Terlama</option>
+                </select>
+            </div>
+
         </div>
 
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
         <div id="peminjamanTable">
-            @include('admin.peminjaman.partials.table', ['peminjamanItems' => $peminjamanItems, 'tab' => $tab])
+            @include('admin.peminjaman.partials.table')
         </div>
     </div>
 </div>
-@endsection
 
 @push('scripts')
 <script>
@@ -160,3 +185,4 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('per_page')?.addEventListener('change', () => fetchPeminjaman(1));
 </script>
 @endpush
+@endsection

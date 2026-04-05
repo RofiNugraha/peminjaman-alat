@@ -11,8 +11,9 @@ class NotificationController extends Controller
 {
     public function index()
     {
-        $notifications = Notification::where('id_user', Auth::id())
-            ->orderBy('created_at', 'desc')
+        $notifications = Notification::with('notifiable')
+            ->where('id_user', Auth::id())
+            ->latest()
             ->paginate(10);
 
         return view('peminjam.notifikasi.index', compact('notifications'));

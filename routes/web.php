@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\KategoriController;
 use App\Http\Controllers\Admin\AlatController;
+use App\Http\Controllers\Admin\DataSiswaController;
 use App\Http\Controllers\Admin\DendaController as AdminDendaController;
 use App\Http\Controllers\Admin\LogAktivitasController;
 use App\Http\Controllers\Peminjam\KategoriAlatController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\Petugas\Laporan\DendaReportController;
 use App\Http\Controllers\Petugas\Laporan\PeminjamanReportController;
 use App\Http\Controllers\Petugas\Laporan\PengembalianReportController;
 use App\Http\Controllers\ProfileController;
+use App\Models\DataSiswa;
 
 Route::get('/', function () {
     return view('welcome');
@@ -46,26 +48,42 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::put('/profile/siswa', [ProfileController::class, 'updateProfilSiswa'])->name('profile.siswa.update');
+    Route::get('/get-siswa/{nisn}', function ($nisn) {return DataSiswa::where('nisn', $nisn)->first();
+    });
 
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::resource('users', UserController::class);
+        
+        Route::get('/data_siswa', [DataSiswaController::class, 'index'])->name('data_siswa.index');
+        Route::post('/data_siswa/import', [DataSiswaController::class, 'import'])->name('data_siswa.import');
+        
         Route::resource('kategori', KategoriController::class);
+        
         Route::resource('alat', AlatController::class);
+        
         Route::get('/peminjaman', [AdminPeminjamanController::class, 'index'])->name('admin.peminjaman.index');
+        Route::get('/peminjanan/{peminjaman}', [AdminPeminjamanController::class, 'show'])->name('admin.peminjaman.show');
+        
         Route::get('/log_aktivitas', [LogAktivitasController::class, 'index'])->name('admin.log_aktivitas.index');
+        
         Route::get('/denda', [AdminDendaController::class, 'index'])->name('admin.denda.index');
+        Route::get('/denda/{denda}', [AdminDendaController::class, 'show'])->name('admin.denda.show');
     });
 
     Route::middleware('role:petugas')->prefix('petugas')->name('petugas.')->group(function () {
 
         Route::get('/peminjaman', [PetugasPeminjamanController::class, 'index'])->name('peminjaman.index');
+        Route::get('/peminjanan/{peminjaman}', [PetugasPeminjamanController::class, 'show'])->name('peminjaman.show');
         Route::post('/peminjaman/{peminjaman}/approve', [PetugasPeminjamanController::class, 'approve'])->name('peminjaman.approve');
         Route::post('/peminjaman/{peminjaman}/reject', [PetugasPeminjamanController::class, 'reject'])->name('peminjaman.reject');
 
         Route::get('/pengembalian', [PengembalianController::class, 'index'])->name('pengembalian.index');
+        Route::get('/pengembalian/{pengembalian}', [PengembalianController::class, 'show'])->name('pengembalian.show');
         Route::post('/pengembalian/{peminjaman}', [PengembalianController::class, 'store'])->name('pengembalian.store');
 
         Route::get('/denda', [DendaController::class, 'index'])->name('denda.index');
+        Route::get('/denda/{peminjaman}', [DendaController::class, 'show'])->name('denda.show');
         Route::post('/denda/{peminjaman}/ingatkan', [DendaController::class, 'ingatkan'])->name('denda.ingatkan');
         Route::post('/denda/{peminjaman}/lunas', [DendaController::class, 'lunas'])->name('denda.lunas');
 
@@ -91,11 +109,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
         Route::get('/peminjaman/create/{alat}', [PeminjamanController::class, 'create'])->name('peminjaman.create');
         Route::post('/peminjaman', [PeminjamanController::class, 'store'])->name('peminjaman.store');
+        Route::get('/peminjaman/{peminjaman}', [PeminjamanController::class, 'show'])->name('peminjaman.show');
         Route::patch('/peminjaman/{peminjaman}/batal', [PeminjamanController::class, 'batal'])->name('peminjaman.batal');
 
         Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifikasi.index');
         Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'markAsRead'])->name('notifikasi.baca');
 
         Route::get('/denda', [PeminjamDendaController::class, 'index'])->name('denda.index');
+        Route::get('/denda/{peminjaman}', [PeminjamDendaController::class, 'show'])->name('denda.show');
     });
 });

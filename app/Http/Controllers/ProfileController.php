@@ -6,12 +6,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use App\Models\ProfilSiswa;
+use App\Models\DataSiswa;
 
 class ProfileController extends Controller
 {
     public function show()
     {
-        $user = User::findOrFail(Auth::id());
+        $user = User::with('profilSiswa.dataSiswa')->findOrFail(Auth::id());
 
         return view('profile.show', compact('user'));
     }
@@ -56,5 +58,58 @@ class ProfileController extends Controller
         Auth::logout();
 
         return redirect()->route('login')->with('success', 'Password berhasil diperbarui. Silakan login kembali.');
+    }
+
+    public function updateProfilSiswa(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'peminjam') {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'nisn' => 'required|exists:data_siswas,nisn',
+            'no_hp' => 'nullable|string|max:15',
+            'no_hp_ortu' => 'nullable|string|max:15',
+            'alamat' => 'nullable|string|max:255',
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ], [
+            'nisn.required' => 'NISN wajib diisi.',
+            'nisn.exists' => 'NISN tidak ditemukan.',
+            'foto.image' => 'File harus berupa gambar.',
+            'foto.mimes' => 'Format harus JPG/PNG.',
+        ]);
+
+        $dataSiswa = DataSiswa::where('nisn', $validated['nisn'])->first();
+
+        $nisnDipakai = ProfilSiswa::where('nisn', $validated['nisn'])
+        ->where('user_id', '!=', $user->id)
+        ->exists();
+
+        if ($nisnDipakai) {
+            return back()->withErrors([
+                'nisn' => 'NISN ini sudah digunakan oleh akun lain.'
+            ])->withInput();
+        }
+
+        $fotoPath = optional($user->profilSiswa)->foto;
+
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('foto_siswa', 'public');
+        }
+
+        ProfilSiswa::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'nisn' => $validated['nisn'],
+                'no_hp' => $validated['no_hp'],
+                'no_hp_ortu' => $validated['no_hp_ortu'],
+                'alamat' => $validated['alamat'],
+                'foto' => $fotoPath,
+            ]
+        );
+
+        return back()->with('success', 'Profil siswa berhasil diperbarui.');
     }
 }

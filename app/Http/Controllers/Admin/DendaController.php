@@ -15,16 +15,16 @@ class DendaController extends Controller
             $perPage = 10;
         }
 
-        $search   = $request->search;
-        $status   = $request->status_denda;
-        $order    = $request->direction === 'asc' ? 'asc' : 'desc';
+        $search = $request->search;
+        $status = $request->status_denda;
+        $order  = $request->direction === 'asc' ? 'asc' : 'desc';
 
         $peminjamans = Peminjaman::with([
                 'user',
-                'items.alat',
-                'pengembalian.denda'
+                'items.alat'
             ])
             ->where('total_denda', '>', 0)
+            ->where('status', 'dikembalikan')
             ->when($status, fn ($q) =>
                 $q->where('status_denda', $status)
             )
@@ -33,8 +33,9 @@ class DendaController extends Controller
                     $u->where('nama', 'like', "%{$search}%")
                 )->orWhereHas('items.alat', fn ($a) =>
                     $a->where('nama_alat', 'like', "%{$search}%")
-                );
+                )->orWhere('kode_peminjaman', 'like', "%{$search}%");
             })
+            ->orderByRaw("CASE WHEN status_denda = 'belum' THEN 0 ELSE 1 END")
             ->orderBy('updated_at', $order)
             ->paginate($perPage)
             ->withQueryString();
@@ -44,5 +45,20 @@ class DendaController extends Controller
         }
 
         return view('admin.denda.index', compact('peminjamans', 'perPage'));
+    }
+
+    public function show($id)
+    {
+        $peminjaman = Peminjaman::with([
+            'user.profilSiswa.dataSiswa',
+            'items.alat.kategoris',
+            'pengembalian.items.alat'
+        ])->findOrFail($id);
+
+        if ($peminjaman->total_denda <= 0) {
+            abort(404);
+        }
+
+        return view('admin.denda.show', compact('peminjaman'));
     }
 }

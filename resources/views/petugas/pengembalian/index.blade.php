@@ -3,34 +3,63 @@
 @section('title', 'Monitoring Pengembalian')
 
 @section('content')
-<div id="mainContent" class="main-content">
-    <div class="container-fluid px-4 py-4">
-        <h4 class="fw-bold mb-3">Daftar Pengembalian Alat</h4>
+<div class="page-header mb-4">
+    <h3 class="mb-1">Monitoring Pengembalian</h3>
+    <p class="mb-0">Kelola dan pantau pengembalian alat</p>
+</div>
 
-        @if (session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-        @if (session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
+@if (session('success'))
+<div class="alert alert-success mb-3">{{ session('success') }}</div>
+@endif
 
-        <div class="d-flex gap-2 flex-wrap mb-3">
-            <input type="text" id="search" class="form-control" placeholder="Cari nama atau alat..."
-                style="width:200px">
+@if (session('error'))
+<div class="alert alert-danger mb-3">{{ session('error') }}</div>
+@endif
 
-            <input type="date" id="date_from" class="form-control" style="width:160px">
-            <input type="date" id="date_to" class="form-control" style="width:160px">
+<!-- FILTER -->
+<div class="card mb-3">
+    <div class="card-body">
 
-            <select id="direction" class="form-select" style="width:120px">
-                <option value="desc">Terbaru</option>
-                <option value="asc">Terlama</option>
-            </select>
-        </div>
+        <form onsubmit="return false;">
+            <div class="row g-3">
 
-        <div class="card shadow-sm border-0">
-            <div class="card-body" id="pengembalianTable">
-                @include('petugas.pengembalian.partials.table', ['peminjamans' => $peminjamans, 'perPage' => $perPage])
+                <div class="col-md-4">
+                    <label class="form-label small">Pencarian</label>
+                    <input type="text" id="search" class="form-control" placeholder="Nama peminjam / alat / kode">
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small">Dari Tanggal</label>
+                    <input type="date" id="date_from" class="form-control">
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small">Sampai Tanggal</label>
+                    <input type="date" id="date_to" class="form-control">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small">Urutan</label>
+                    <select id="direction" class="form-select">
+                        <option value="desc">Terbaru</option>
+                        <option value="asc">Terlama</option>
+                    </select>
+                </div>
+
             </div>
+        </form>
+
+    </div>
+</div>
+
+<!-- TABLE -->
+<div class="card">
+    <div class="card-body p-0">
+        <div id="pengembalianTable">
+            @include('petugas.pengembalian.partials.table', [
+            'peminjamans' => $peminjamans,
+            'perPage' => $perPage
+            ])
         </div>
     </div>
 </div>

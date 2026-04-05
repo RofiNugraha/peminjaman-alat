@@ -1,31 +1,38 @@
-<h3>Dashboard Petugas</h3>
-<p class="text-muted">Peminjaman & Pengembalian</p>
+<div class="page-header mb-4">
+    <h3>Dashboard Petugas</h3>
+    <p>Peminjaman & pengembalian</p>
+</div>
 
-<div class="row">
-    <div class="col-md-4">
-        <div class="card border-primary mb-3">
+<div class="row g-4">
+
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card d-flex">
+            <div class="card-indicator indicator-warning"></div>
             <div class="card-body">
-                <h5>Peminjaman Menunggu</h5>
-                <h2>{{ $menunggu ?? 0 }}</h2>
+                <h6>Menunggu</h6>
+                <h3>{{ $menunggu ?? 0 }}</h3>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card border-success mb-3">
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card d-flex">
+            <div class="card-indicator indicator-success"></div>
             <div class="card-body">
-                <h5>Peminjaman Disetujui</h5>
-                <h2>{{ $disetujui ?? 0 }}</h2>
+                <h6>Disetujui</h6>
+                <h3>{{ $disetujui ?? 0 }}</h3>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card border-secondary mb-3">
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card d-flex">
+            <div class="card-indicator indicator-primary"></div>
             <div class="card-body">
-                <h5>Pengembalian Hari Ini</h5>
-                <h2>{{ $pengembalianHariIni ?? 0 }}</h2>
+                <h6>Pengembalian Hari Ini</h6>
+                <h3>{{ $pengembalianHariIni ?? 0 }}</h3>
             </div>
         </div>
     </div>
+
 </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Petugas;
 
 use App\Http\Controllers\Controller;
+use App\Models\Alat;
 use App\Models\Peminjaman;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -23,10 +24,11 @@ class PeminjamanController extends Controller
         $dateTo     = $request->date_to;
         $status     = $request->status ?? 'menunggu';
 
-        $peminjamans = Peminjaman::with(['user', 'items.alat.kategori'])
+        $peminjamans = Peminjaman::with(['user.profilSiswa.dataSiswa', 'items.alat.kategoris'])
             ->when($search, function ($q) use ($search) {
                 $q->whereHas('user', fn($u) => $u->where('nama', 'like', "%{$search}%"))
-                ->orWhereHas('items.alat', fn($a) => $a->where('nama_alat', 'like', "%{$search}%"));
+                ->orWhereHas('items.alat', fn($a) => $a->where('nama_alat', 'like', "%{$search}%"))
+                ->orWhereHas('items.peminjaman', fn($a) => $a->where('kode_peminjaman', 'like', "%{$search}%"));
             })
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($dateFrom && $dateTo, fn($q) =>
@@ -49,55 +51,81 @@ class PeminjamanController extends Controller
         return view('petugas.peminjaman.index', compact('peminjamans', 'perPage'));
     }
 
+    public function show(Peminjaman $peminjaman)
+    {
+        $peminjaman->load([
+            'user.profilSiswa.dataSiswa',
+            'items.alat.kategoris'
+        ]);
+
+        return view('petugas.peminjaman.show', compact('peminjaman'));
+    }
+
     public function approve(Peminjaman $peminjaman)
     {
         DB::transaction(function () use ($peminjaman) {
-            $peminjaman->lockForUpdate();
 
-            if ($peminjaman->status !== 'menunggu') {
+            $peminjaman = Peminjaman::where('id', $peminjaman->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$peminjaman->canBeApproved()) {
                 abort(409, 'Pengajuan sudah diproses.');
             }
 
-            $items = $peminjaman->items()->with('alat')->lockForUpdate()->get();
+            if ($peminjaman->isExpired()) {
+                abort(422, 'Peminjaman sudah kadaluarsa.');
+            }
+
+            $items = $peminjaman->items()
+                ->with('alat')
+                ->lockForUpdate()
+                ->get();
 
             foreach ($items as $item) {
-                $alat = $item->alat;
-
-                if ($alat->stok < $item->qty) {
-                    throw new \Exception(
-                        "Stok alat '{$alat->nama_alat}' tidak mencukupi."
-                    );
+                if ($item->alat->stok < $item->qty) {
+                    throw new \Exception("Stok {$item->alat->nama_alat} tidak cukup");
                 }
             }
 
             foreach ($items as $item) {
-                $item->alat->decrement('stok', $item->qty);
+                Alat::where('id', $item->id_alat)
+                    ->where('stok', '>=', $item->qty)
+                    ->decrement('stok', $item->qty);
             }
 
             $peminjaman->update([
                 'status'        => 'disetujui',
-                'total_denda'   => 0,
-                'status_denda'  => 'tidak_ada',
+                'approved_by'   => Auth::id(),
+                'approved_at'   => now(),
             ]);
         });
 
         catat_log(Auth::user()->nama . ' menyetujui peminjaman oleh ' . $peminjaman->user->nama);
 
-        return back()->with('success', 'Pengajuan peminjaman berhasil disetujui.');
+        return redirect()->route('petugas.peminjaman.index')
+            ->with('success','Pengajuan berhasil disetujui.');
     }
 
     public function reject(Peminjaman $peminjaman)
     {
-        if ($peminjaman->status !== 'menunggu') {
+        if (!$peminjaman->canBeApproved()) {
             return back()->with('error', 'Pengajuan tidak dapat ditolak.');
         }
 
+        if ($peminjaman->isExpired()) {
+            return back()->with('error', 'Peminjaman sudah kadaluarsa.');
+        }
+
         $peminjaman->update([
-            'status' => 'ditolak',
+            'status'        => 'ditolak',
+            'rejected_by'   => Auth::id(),
+            'rejected_at'   => now(),
         ]);
 
         catat_log(Auth::user()->nama . ' menolak peminjaman oleh ' . $peminjaman->user->nama);
 
-        return back()->with('success', 'Pengajuan berhasil ditolak.');
+        return redirect()->route('petugas.peminjaman.index')
+            ->with('success','Pengajuan berhasil ditolak.');
     }
 }

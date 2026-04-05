@@ -1,31 +1,38 @@
-<h3>Dashboard Peminjam</h3>
-<p class="text-muted">Aktivitas peminjaman Anda</p>
+<div class="page-header mb-4">
+    <h3>Dashboard Peminjam</h3>
+    <p>Aktivitas peminjaman Anda</p>
+</div>
 
-<div class="row">
-    <div class="col-md-4">
-        <div class="card border-info mb-3">
+<div class="row g-4">
+
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card d-flex">
+            <div class="card-indicator indicator-success"></div>
             <div class="card-body">
-                <h5>Total Peminjaman</h5>
-                <h2>{{ $totalPinjam ?? 0 }}</h2>
+                <h6>Total Peminjaman</h6>
+                <h3>{{ $totalPinjam ?? 0 }}</h3>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card border-warning mb-3">
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card d-flex">
+            <div class="card-indicator indicator-warning"></div>
             <div class="card-body">
-                <h5>Masih Dipinjam</h5>
-                <h2>{{ $aktif ?? 0 }}</h2>
+                <h6>Masih Dipinjam</h6>
+                <h3>{{ $aktif ?? 0 }}</h3>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card border-success mb-3">
+    <div class="col-md-3 col-sm-6">
+        <div class="card dashboard-card d-flex">
+            <div class="card-indicator indicator-primary"></div>
             <div class="card-body">
-                <h5>Sudah Dikembalikan</h5>
-                <h2>{{ $selesai ?? 0 }}</h2>
+                <h6>Sudah Dikembalikan</h6>
+                <h3>{{ $selesai ?? 0 }}</h3>
             </div>
         </div>
     </div>
+
 </div>

@@ -3,20 +3,40 @@
 @section('title', 'Pilih Kategori Alat')
 
 @section('content')
-<div id="mainContent" class="main-content">
-    <div class="container-fluid px-4 py-4">
-        <h4 class="fw-bold mb-4">Pilih Kategori Alat</h4>
-        <form method="GET" action="{{ route('peminjam.kategori.index') }}" id="searchForm" class="mb-4">
-            <div class="row g-2 align-items-center">
-                <div class="col-md-4">
-                    <input type="text" id="search" class="form-control mb-4" placeholder="Cari kategori alat..."
-                        autocomplete="off">
+<div class="page-header mb-4">
+    <h3 class="mb-1">Kategori Alat</h3>
+    <p class="mb-0">Pilih kategori alat yang tersedia</p>
+</div>
 
-                </div>
+<div class="card mb-3">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-end gap-3">
+
+        <div class="d-flex flex-wrap gap-3 align-items-end">
+
+            <div>
+                <label class="form-label small">Cari Kategori</label>
+                <input type="text" id="search" class="form-control" placeholder="Nama kategori..."
+                    value="{{ request('search') }}">
             </div>
-        </form>
+
+            <div>
+                <label class="form-label small">Data per halaman</label>
+                <select id="perPage" class="form-select">
+                    @foreach([4,8,12,16] as $size)
+                    <option value="{{ $size }}" @selected($perPage==$size)>{{ $size }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
         <div id="kategori-container">
-            @include('peminjam.kategori._list', ['kategoris' => $kategoris])
+            @include('peminjam.kategori._list')
         </div>
     </div>
 </div>
@@ -24,23 +44,49 @@
 <script>
 let timeout = null;
 
-document.getElementById('search').addEventListener('keyup', function() {
-    clearTimeout(timeout);
+let delay;
 
-    let keyword = this.value;
+function fetchKategori(url = null) {
+    const search = document.getElementById('search').value;
+    const perPage = document.getElementById('perPage').value;
 
-    timeout = setTimeout(() => {
-        fetch(`{{ route('peminjam.kategori.index') }}?search=${keyword}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(res => res.text())
-            .then(html => {
-                document.getElementById('kategori-container').innerHTML = html;
-            });
-    }, 400);
+    let endpoint;
+
+    if (url) {
+        const u = new URL(url);
+        u.searchParams.set('search', search);
+        u.searchParams.set('per_page', perPage);
+        endpoint = u.toString();
+    } else {
+        endpoint = `{{ route('peminjam.kategori.index') }}?search=${search}&per_page=${perPage}`;
+    }
+
+    fetch(endpoint, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById('kategori-container').innerHTML = html;
+        });
+}
+
+document.getElementById('search').addEventListener('input', () => {
+    clearTimeout(delay);
+    delay = setTimeout(() => fetchKategori(), 300);
+});
+
+document.getElementById('perPage').addEventListener('change', () => {
+    fetchKategori();
+});
+
+document.addEventListener('click', function(e) {
+    const link = e.target.closest('.pagination a');
+    if (link) {
+        e.preventDefault();
+        fetchKategori(link.href);
+    }
 });
 </script>
-
 @endsection
