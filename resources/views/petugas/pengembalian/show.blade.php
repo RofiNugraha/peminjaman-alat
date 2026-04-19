@@ -135,8 +135,15 @@ $colors = [
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
+                        <div class="alert alert-info">
+                            Isi kondisi alat dengan benar:
+                            <ul class="mb-0">
+                                <li>Total (Baik + Rusak + Hilang) harus sama dengan jumlah</li>
+                                <li>Jika ada rusak/hilang → wajib isi denda</li>
+                            </ul>
+                        </div>
 
-                        <h6 class="fw-semibold mb-3">Daftar Barang</h6>
+                        <h6 class="fw-semibold mb-3">Daftar Alat</h6>
 
                         <div class="table-responsive">
                             <table class="table table-modern align-middle">
@@ -150,26 +157,34 @@ $colors = [
                                 </thead>
                                 <tbody>
                                     @foreach($peminjaman->items as $item)
-                                    <tr>
-                                        <td>{{ $item->alat->nama_alat }}</td>
-                                        <td>{{ $item->qty }}</td>
+                                    <tr class="row-item">
+                                        <td class="fw-medium">{{ $item->alat->nama_alat }}</td>
+                                        <td class="qty-max">{{ $item->qty }}</td>
 
                                         <td>
-                                            <select name="kondisi[{{ $item->id }}]" class="form-select kondisi">
-                                                <option value="baik">Baik</option>
-                                                <option value="rusak">Rusak</option>
-                                                <option value="hilang">Hilang</option>
-                                            </select>
+                                            <div class="d-flex flex-column gap-1">
+                                                <input type="number" name="qty_baik[{{ $item->id }}]"
+                                                    class="form-control qty-input" placeholder="Baik" min="0"
+                                                    max="{{ $item->qty }}">
+
+                                                <input type="number" name="qty_rusak[{{ $item->id }}]"
+                                                    class="form-control qty-input qty-rusak" placeholder="Rusak" min="0"
+                                                    max="{{ $item->qty }}">
+
+                                                <input type="number" name="qty_hilang[{{ $item->id }}]"
+                                                    class="form-control qty-input qty-hilang" placeholder="Hilang"
+                                                    min="0" max="{{ $item->qty }}">
+                                            </div>
+
+                                            <small class="text-danger error-msg d-none"></small>
                                         </td>
 
                                         <td>
                                             <input type="text" name="denda_rusak[{{ $item->id }}]"
-                                                class="form-control denda-input denda-rusak mb-2"
-                                                placeholder="Denda rusak" hidden>
+                                                class="form-control denda-rusak mb-2" placeholder="Denda rusak">
 
                                             <input type="text" name="denda_hilang[{{ $item->id }}]"
-                                                class="form-control denda-input denda-hilang" placeholder="Denda hilang"
-                                                hidden>
+                                                class="form-control denda-hilang" placeholder="Denda hilang">
                                         </td>
                                     </tr>
                                     @endforeach
@@ -329,8 +344,8 @@ $colors = [
 <div class="sticky-action-bar">
     <div class="container-fluid d-flex justify-content-end gap-2">
 
-        <button type="button" onclick="confirmSubmit()" class="btn btn-primary">
-            Selesaikan Pengembalian
+        <button type="button" onclick="confirmSubmit()" class="btn btn-primary btn-sm">
+            Konfirmasi Pengembalian
         </button>
 
     </div>
@@ -343,77 +358,87 @@ function formatRupiah(angka) {
         .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-document.querySelectorAll('.denda-input').forEach(input => {
-
-    input.addEventListener('input', function() {
-        let value = this.value.replace(/\D/g, '');
-
-        if (value === '') {
-            this.value = '';
-            return;
-        }
-
-        this.value = formatRupiah(value);
-    });
-
-});
-
-document.querySelectorAll('.kondisi').forEach(select => {
-    select.addEventListener('change', function() {
-        const row = this.closest('tr');
-
-        const rusak = row.querySelector('.denda-rusak');
-        const hilang = row.querySelector('.denda-hilang');
-
-        rusak.hidden = this.value !== 'rusak';
-        hilang.hidden = this.value !== 'hilang';
-
-        rusak.value = '';
-        hilang.value = '';
-    });
-});
-
 function parseRupiah(value) {
     return parseInt(value.replace(/\./g, '')) || 0;
 }
 
+document.querySelectorAll('.denda-rusak, .denda-hilang').forEach(input => {
+    input.addEventListener('input', function() {
+        this.value = formatRupiah(this.value);
+    });
+});
+
+document.querySelectorAll('.row-item').forEach(row => {
+
+    const inputs = row.querySelectorAll('.qty-input');
+
+    inputs.forEach(input => {
+        input.addEventListener('input', () => validateRow(row));
+    });
+
+});
+
+function validateRow(row) {
+    const qtyInputs = row.querySelectorAll('.qty-input');
+    const maxQty = parseInt(row.querySelector('.qty-max').innerText);
+
+    let total = 0;
+    qtyInputs.forEach(i => total += parseInt(i.value || 0));
+
+    const rusak = row.querySelector('.qty-rusak');
+    const hilang = row.querySelector('.qty-hilang');
+
+    const dendaRusak = row.querySelector('.denda-rusak');
+    const dendaHilang = row.querySelector('.denda-hilang');
+
+    const errorEl = row.querySelector('.error-msg');
+
+    let error = '';
+
+    if (total !== maxQty) {
+        error = 'Total kondisi harus = ' + maxQty;
+    }
+
+    if (rusak.value > 0 && parseRupiah(dendaRusak.value) <= 0) {
+        error = 'Denda rusak wajib diisi';
+    }
+
+    if (hilang.value > 0 && parseRupiah(dendaHilang.value) <= 0) {
+        error = 'Denda hilang wajib diisi';
+    }
+
+    if (error) {
+        row.classList.add('table-danger');
+        errorEl.classList.remove('d-none');
+        errorEl.innerText = error;
+        return false;
+    } else {
+        row.classList.remove('table-danger');
+        errorEl.classList.add('d-none');
+        return true;
+    }
+}
+
 function confirmSubmit() {
     let valid = true;
-    let message = '';
 
-    document.querySelectorAll('tr').forEach(row => {
-        const kondisi = row.querySelector('.kondisi');
-        if (!kondisi) return;
-
-        const rusak = row.querySelector('.denda-rusak');
-        const hilang = row.querySelector('.denda-hilang');
-
-        if (kondisi.value === 'rusak') {
-            if (!rusak.value || parseRupiah(rusak.value) <= 0) {
-                valid = false;
-                message = 'Denda rusak harus diisi dan tidak boleh 0';
-            }
-        }
-
-        if (kondisi.value === 'hilang') {
-            if (!hilang.value || parseRupiah(hilang.value) <= 0) {
-                valid = false;
-                message = 'Denda hilang harus diisi dan tidak boleh 0';
-            }
+    document.querySelectorAll('.row-item').forEach(row => {
+        if (!validateRow(row)) {
+            valid = false;
         }
     });
 
     if (!valid) {
-        Swal.fire('Error', message, 'error');
+        Swal.fire('Error', 'Periksa kembali input yang salah', 'error');
         return;
     }
 
     Swal.fire({
         title: 'Selesaikan Pengembalian?',
-        text: "Pastikan kondisi barang sudah sesuai",
+        text: "Data tidak bisa diubah setelah disimpan",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Ya',
+        confirmButtonText: 'Ya, simpan',
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {

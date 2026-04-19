@@ -30,7 +30,11 @@ class ProfileController extends Controller
 
         $user->update($validated);
 
-        catat_log($user->nama . ' memperbarui profilnya.');
+        logAktivitas(
+            'Mengubah',
+            'Profil Pengguna',
+            "Mengubah data profil pengguna '{$user->nama}'"
+        );
 
         return back()->with('success', 'Profil berhasil diperbarui.');
     }
@@ -54,7 +58,11 @@ class ProfileController extends Controller
         }
 
         $user->update(['password' => Hash::make($request->new_password)]);
-        catat_log($user->nama . ' memperbarui password akunnya.');
+        logAktivitas(
+            'Mengubah',
+            'Password',
+            "Mengubah password akun '{$user->nama}'"
+        );
         Auth::logout();
 
         return redirect()->route('login')->with('success', 'Password berhasil diperbarui. Silakan login kembali.');
@@ -108,6 +116,12 @@ class ProfileController extends Controller
                 'alamat' => $validated['alamat'],
                 'foto' => $fotoPath,
             ]
+        );
+
+        logAktivitas(
+            'Mengubah',
+            'Profil Siswa',
+            "Memperbarui profil siswa '{$user->nama}' (NISN: {$validated['nisn']})"
         );
 
         return back()->with('success', 'Profil siswa berhasil diperbarui.');

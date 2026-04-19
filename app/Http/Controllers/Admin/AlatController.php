@@ -88,7 +88,11 @@ class AlatController extends Controller
             'gambar'            => $path,
         ]);
 
-        catat_log(Auth::user()->nama . ' menambahkan alat ' . $alat->nama_alat);
+        logAktivitas(
+            'Menambahkan',
+            'Alat',
+            "Menambahkan alat '{$alat->nama_alat}' (Kode Alat {$alat->kode_alat}) dengan stok {$alat->stok} dan denda Rp{$alat->denda_per_hari}/hari"
+        );
 
         return redirect()->route('alat.index')->with('success', 'Alat berhasil ditambahkan.');
     }
@@ -132,6 +136,9 @@ class AlatController extends Controller
             'gambar.max'   => 'Ukuran gambar maksimal 2 MB.',
         ]);
 
+        $namaLama  = $alat->nama_alat;
+        $stokLama  = $alat->stok;
+        $dendaLama = $alat->denda_per_hari;
 
         $data = $request->only([
             'id_kategori',
@@ -150,7 +157,11 @@ class AlatController extends Controller
 
         $alat->update($data);
 
-        catat_log(Auth::user()->nama . ' mengubah data alat: ' . $alat->nama_alat);
+        logAktivitas(
+            'Mengubah',
+            'Alat',
+            "Mengubah alat '{$namaLama}' (Kode Alat {$alat->kode_alat}) menjadi '{$alat->nama_alat}', stok {$stokLama}→{$alat->stok}, denda Rp{$dendaLama}→Rp{$alat->denda_per_hari}/hari"
+        );
 
         return redirect()->route('alat.index')->with('success', 'Alat berhasil diperbarui.');
     }
@@ -161,13 +172,21 @@ class AlatController extends Controller
             return back()->with('error', 'Alat tidak dapat dihapus karena memiliki riwayat peminjaman.');
         }
 
+        $nama  = $alat->nama_alat;
+        $kode_alat    = $alat->kode_alat;
+        $stok  = $alat->stok;
+
         if ($alat->gambar && Storage::disk('public')->exists($alat->gambar)) {
             Storage::disk('public')->delete($alat->gambar);
         }
 
         $alat->delete();
 
-        catat_log(Auth::user()->nama . ' menghapus alat ' . $alat->nama_alat);
+        logAktivitas(
+            'Menghapus',
+            'Alat',
+            "Menghapus alat '{$nama}' (Kode Alat {$kode_alat}) dengan stok terakhir {$stok}"
+        );
 
         return redirect()->route('alat.index')->with('success', 'Alat berhasil dihapus.');
     }

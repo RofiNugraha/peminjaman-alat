@@ -86,7 +86,11 @@ class UserController extends Controller
         
         $user = User::create($validated);
 
-        catat_log(Auth::user()->nama . ' menambahkan petugas: ' . $user->nama);
+        logAktivitas(
+            'Menambahkan',
+            'Manajemen Pengguna',
+            "Menambahkan user '{$user->nama}' (ID-{$user->id}) sebagai petugas"
+        );
 
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan');
     }
@@ -122,12 +126,18 @@ class UserController extends Controller
         if (!in_array($user->role, ['petugas', 'peminjam'])) {
             return back()->with('error', 'Role tidak valid.');
         }
+
+        $roleLama = $user->role;
         
         $user->update([
             'role' => $validated['role']
         ]);
 
-        catat_log(Auth::user()->nama . ' mengubah data user: ' . $user->nama);
+        logAktivitas(
+            'Mengubah',
+            'Manajemen Pengguna',
+            "Mengubah role user '{$user->nama}' (ID-{$user->id}) dari '{$roleLama}' menjadi '{$validated['role']}'"
+        );
 
         return redirect()->route('users.index')->with('success', 'Role berhasil diperbarui');
     }
@@ -144,9 +154,17 @@ class UserController extends Controller
             return back()->with('error', 'Tidak boleh mengubah akun admin.');
         }
 
+        $namaUser = $user->nama;
+        $idUser   = $user->id;
+        $roleUser = $user->role;
+
         $user->delete();
 
-        catat_log(Auth::user()->nama . ' menghapus user: ' . $user->nama);
+        logAktivitas(
+            'Menghapus',
+            'Manajemen Pengguna',
+            "Menghapus user '{$namaUser}' (ID-{$idUser}) dengan role '{$roleUser}'"
+        );
 
         return redirect()->route('users.index')->with('success', 'User berhasil dihapus');
     }

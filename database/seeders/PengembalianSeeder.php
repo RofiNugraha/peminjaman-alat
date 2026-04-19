@@ -15,73 +15,71 @@ class PengembalianSeeder extends Seeder
     {
         DB::transaction(function () {
 
-            $peminjamans = Peminjaman::with('items')->get();
+            $peminjamans = Peminjaman::with('items.alat')->get();
 
             foreach ($peminjamans as $peminjaman) {
+
                 if ($peminjaman->status !== 'disetujui') continue;
 
                 $tglKembali = Carbon::parse($peminjaman->tgl_kembali);
-                $scenario = rand(1, 5);
 
-                $tglDikembalikan = match ($scenario) {
+                $tglDikembalikan = match (rand(1, 3)) {
                     1 => $tglKembali,
                     2 => $tglKembali->copy()->addDays(rand(1, 3)),
-                    3 => $tglKembali,
-                    4 => $tglKembali,
-                    5 => $tglKembali->copy()->addDays(rand(1, 5)),
+                    3 => $tglKembali->copy()->addDays(rand(2, 5)),
                 };
 
                 $hariTelat = max(0, $tglKembali->diffInDays($tglDikembalikan, false));
-                $dendaTelat = $hariTelat * 5000;
+
+                $dendaTelat = 0;
+                foreach ($peminjaman->items as $item) {
+                    $dendaTelat += $item->alat->denda_per_hari * $hariTelat;
+                }
 
                 $pengembalian = Pengembalian::create([
-                    'id_peminjaman'   => $peminjaman->id,
-                    'id_petugas'      => 1,
+                    'id_peminjaman'    => $peminjaman->id,
+                    'id_petugas'       => 1,
                     'tgl_dikembalikan'=> $tglDikembalikan,
-                    'hari_telat'      => $hariTelat,
-                    'denda_telat'     => $dendaTelat,
+                    'hari_telat'       => $hariTelat,
+                    'denda_telat'      => $dendaTelat,
                 ]);
 
-                $totalDendaItem = 0;
+                $totalDendaBarang = 0;
 
                 foreach ($peminjaman->items as $item) {
 
-                    $kondisi = 'baik';
-                    $denda = 0;
+                    $qtyTotal = $item->qty;
 
-                    if ($scenario == 3) {
-                        $kondisi = 'rusak';
-                        $denda = 20000;
-                    }
+                    $qtyRusak  = rand(0, $qtyTotal);
+                    $sisa      = $qtyTotal - $qtyRusak;
 
-                    if ($scenario == 4) {
-                        $kondisi = 'hilang';
-                        $denda = 50000;
-                    }
+                    $qtyHilang = rand(0, $sisa);
+                    $qtyBaik   = $qtyTotal - $qtyRusak - $qtyHilang;
 
-                    if ($scenario == 5) {
-                        $random = rand(1, 3);
-                        if ($random == 2) {
-                            $kondisi = 'rusak';
-                            $denda = 20000;
-                        } elseif ($random == 3) {
-                            $kondisi = 'hilang';
-                            $denda = 50000;
-                        }
-                    }
+                    $dendaRusakPerUnit  = $qtyRusak > 0 ? rand(10000, 50000) : 0;
+                    $dendaHilangPerUnit = $qtyHilang > 0 ? rand(50000, 150000) : 0;
+
+                    $subtotalDenda =
+                        ($qtyRusak * $dendaRusakPerUnit) +
+                        ($qtyHilang * $dendaHilangPerUnit);
 
                     PengembalianItem::create([
                         'id_pengembalian' => $pengembalian->id,
                         'id_alat'         => $item->id_alat,
-                        'qty'             => $item->qty,
-                        'kondisi'         => $kondisi,
-                        'denda'           => $denda,
+                        'qty_baik'        => $qtyBaik,
+                        'qty_rusak'       => $qtyRusak,
+                        'qty_hilang'      => $qtyHilang,
+                        'denda'           => $subtotalDenda,
                     ]);
 
-                    $totalDendaItem += $denda;
+                    if ($qtyBaik > 0) {
+                        $item->alat->increment('stok', $qtyBaik);
+                    }
+
+                    $totalDendaBarang += $subtotalDenda;
                 }
 
-                $totalDenda = $dendaTelat + $totalDendaItem;
+                $totalDenda = $dendaTelat + $totalDendaBarang;
 
                 $peminjaman->update([
                     'status'       => 'dikembalikan',

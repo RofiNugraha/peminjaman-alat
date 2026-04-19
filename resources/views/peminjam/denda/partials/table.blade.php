@@ -5,8 +5,6 @@
                 <th width="60">No</th>
                 <th>Kode</th>
                 <th>Alat</th>
-                <th>Kondisi</th>
-                <th width="120">Terlambat</th>
                 <th width="160">Total Denda</th>
                 <th width="140">Status</th>
                 <th width="100" class="text-center">Aksi</th>
@@ -35,44 +33,13 @@
                 </td>
 
                 <td>
-                    <div class="small text-muted">
+                    <div class="fw">
                         @foreach ($p->items as $item)
                         <div>
                             {{ $item->alat->nama_alat }}
-                            <span class="text-muted">({{ $item->qty }})</span>
                         </div>
                         @endforeach
                     </div>
-                </td>
-
-                <td>
-                    @if($p->pengembalian && $p->pengembalian->items->count())
-                    @foreach($p->pengembalian->items as $item)
-                    <div class="mb-1">
-                        <span class="badge bg-{{ 
-                                $item->kondisi == 'baik' ? 'success' : 
-                                ($item->kondisi == 'rusak' ? 'warning' : 'danger') 
-                            }} bg-opacity-10 text-{{ 
-                                $item->kondisi == 'baik' ? 'success' : 
-                                ($item->kondisi == 'rusak' ? 'warning' : 'danger') 
-                            }}">
-                            {{ ucfirst($item->kondisi) }}
-                        </span>
-                    </div>
-                    @endforeach
-                    @else
-                    <span class="text-muted">-</span>
-                    @endif
-                </td>
-
-                <td>
-                    @if($p->pengembalian && $p->pengembalian->hari_telat > 0)
-                    <span class="badge bg-warning bg-opacity-10 text-warning">
-                        {{ $p->pengembalian->hari_telat }} hari
-                    </span>
-                    @else
-                    <span class="text-muted">-</span>
-                    @endif
                 </td>
 
                 <td class="fw-semibold text-danger">

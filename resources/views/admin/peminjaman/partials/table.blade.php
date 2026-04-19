@@ -4,7 +4,7 @@
             <tr>
                 <th width="60">No</th>
                 <th>Kode</th>
-                <th>Nama</th>
+                <th>Peminjam</th>
                 <th>Tanggal Pinjam</th>
                 <th>Tanggal Kembali</th>
                 <th width="140">Status</th>

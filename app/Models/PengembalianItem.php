@@ -11,8 +11,9 @@ class PengembalianItem extends Model
     protected $fillable = [
         'id_pengembalian',
         'id_alat',
-        'qty',
-        'kondisi',
+        'qty_baik',
+        'qty_hilang',
+        'qty_rusak',
         'denda',
     ];
 

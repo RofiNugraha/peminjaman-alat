@@ -20,7 +20,7 @@
 
                 <td class="fw-semibold">{{ $p->kode_peminjaman }}</td>
 
-                <td>{{ $p->user->nama }}</td>
+                <td>{{ $p->user->profilSiswa->dataSiswa->nama ?? $p->user->nama ?? '-' }}</td>
 
                 <td class="small text-muted">
                     @foreach ($p->items as $item)

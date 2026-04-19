@@ -21,7 +21,7 @@
                 <td class="fw-semibold">{{ $p->kode_peminjaman }}</td>
 
                 <td>
-                    {{ $p->user->profilSiswa->dataSiswa->nama ?? '-' }}
+                    {{ $p->user->profilSiswa->dataSiswa->nama ?? $p->user->nama ?? '-' }}
                 </td>
 
                 <td class="text-muted">

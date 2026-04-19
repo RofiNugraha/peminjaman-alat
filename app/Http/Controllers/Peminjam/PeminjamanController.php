@@ -174,7 +174,8 @@ class PeminjamanController extends Controller
                 return back()->with('error', 'Terlalu banyak pengajuan. Tunggu proses sebelumnya.');
             }
 
-        DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request, $alat) {
+
             $peminjaman = Peminjaman::create([
                 'id_user'       => Auth::id(),
                 'tgl_pinjam'    => $request->tgl_pinjam,
@@ -189,9 +190,13 @@ class PeminjamanController extends Controller
                 'id_alat'       => $request->id_alat,
                 'qty'           => $request->qty,
             ]);
-        });
 
-        catat_log(Auth::user()->nama . ' mengajukan peminjaman alat ' . $alat->nama_alat);
+            logAktivitas(
+                'Menambahkan',
+                'Peminjaman',
+                "Mengajukan peminjaman alat '{$alat->nama_alat}' sebanyak {$request->qty} unit (Kode {$peminjaman->kode_peminjaman})"
+            );
+        });
 
         return redirect()
             ->route('peminjam.peminjaman.index')
@@ -227,6 +232,12 @@ class PeminjamanController extends Controller
         $peminjaman->update([
             'status' => 'dibatalkan',
         ]);
+
+        logAktivitas(
+            'Mengubah',
+            'Peminjaman',
+            "Membatalkan pengajuan peminjaman (Kode {$peminjaman->kode_peminjaman})"
+        );
 
         return back()->with('success', 'Pengajuan peminjaman berhasil dibatalkan.');
     }

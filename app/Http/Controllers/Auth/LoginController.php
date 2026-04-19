@@ -16,10 +16,9 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'username' => ['required', 'string', 'min:4', 'max:50',],
+            'username' => ['required', 'string', 'min:4', 'max:50'],
             'password' => ['required', 'string', 'min:8', 'max:255'],
         ], [
-
             'required' => ':attribute wajib diisi.',
             'string' => ':attribute harus berupa teks.',
             'min' => [
@@ -30,17 +29,20 @@ class LoginController extends Controller
                 'string' => ':attribute maksimal :max karakter.',
                 'numeric' => ':attribute maksimal bernilai :max.',
             ],
-
             'attributes' => [
                 'username' => 'Username',
                 'password' => 'Password',
             ],
-
         ]);
 
         if (Auth::attempt($credentials, false)) {
             $request->session()->regenerate();
-            catat_log(Auth::user()->nama . ' login ke sistem');
+
+            logAktivitas(
+                'Login',
+                'Autentikasi',
+                "User '{$request->username}' berhasil login ke sistem"
+            );
 
             return redirect()->route('dashboard')
                 ->with('success', 'Login berhasil, selamat datang ' . Auth::user()->nama);
@@ -48,12 +50,28 @@ class LoginController extends Controller
 
         sleep(1);
 
-        return back()->withErrors(['username' => 'Username atau password salah',])->onlyInput('username');
+        // ❌ LOG AKTIVITAS (LOGIN GAGAL)
+        logAktivitas(
+            'Login',
+            'Autentikasi',
+            "Percobaan login gagal untuk username '{$request->username}'"
+        );
+
+        return back()
+            ->withErrors(['username' => 'Username atau password salah'])
+            ->onlyInput('username');
     }
 
     public function logout(Request $request)
     {
-        catat_log(Auth::user()->nama . ' logout dari sistem');
+        $namaUser = Auth::user()->nama ?? 'User';
+
+        logAktivitas(
+            'Logout',
+            'Autentikasi',
+            "User '{$namaUser}' keluar dari sistem"
+        );
+
         Auth::logout();
 
         $request->session()->invalidate();

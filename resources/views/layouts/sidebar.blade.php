@@ -18,7 +18,10 @@
         $isMasterOpen = request()->is('admin/users*') ||
         request()->is('admin/data_siswa*') ||
         request()->is('admin/kategori*') ||
-        request()->is('admin/alat*');
+        request()->is('admin/alat*') ||
+        request()->is('admin/setting*') ||
+        request()->is('admin/testimonial*') ||
+        request()->is('admin/contact*');
         @endphp
 
         <li class="nav-item">
@@ -66,6 +69,30 @@
                             class="nav-link text-white {{ request()->is('admin/alat*') ? 'active' : '' }}">
                             <i class="bi bi-tools"></i>
                             <span class="menu-text ms-2">Alat</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ url('/admin/setting') }}"
+                            class="nav-link text-white {{ request()->is('admin/setting*') ? 'active' : '' }}">
+                            <i class="bi bi-gear"></i>
+                            <span>Landing Setting</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ url('/admin/testimonial') }}"
+                            class="nav-link text-white {{ request()->is('admin/testimonial*') ? 'active' : '' }}">
+                            <i class="bi bi-chat"></i>
+                            <span>Testimonial</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ url('/admin/contact') }}"
+                            class="nav-link text-white {{ request()->is('admin/contact*') ? 'active' : '' }}">
+                            <i class="bi bi-envelope"></i>
+                            <span>Kontak</span>
                         </a>
                     </li>
                 </ul>
@@ -177,6 +204,7 @@
         $isTransaksiOpen = request()->is('petugas/peminjaman*') ||
         request()->is('petugas/pengembalian*') ||
         request()->is('petugas/denda*');
+        request()->is('petugas/laporan*');
         @endphp
 
         <li class="nav-item">
@@ -222,25 +250,10 @@
             </div>
         </li>
         <li class="nav-item">
-            <a href="{{ route('petugas.laporan.denda.index') }}"
-                class="nav-link text-white {{ request()->routeIs('petugas.laporan.denda*') ? 'active' : '' }}">
-                <i class="bi bi-card-text"></i>
-                <span class="menu-text">Laporan Denda</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('petugas.laporan.peminjaman.index') }}"
-                class="nav-link text-white {{ request()->routeIs('petugas.laporan.peminjaman*') ? 'active' : '' }}">
-                <i class="bi bi-bar-chart-steps"></i>
-                <span class="menu-text">Laporan Peminjaman</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a href="{{ route('petugas.laporan.pengembalian.index') }}"
-                class="nav-link text-white {{ request()->routeIs('petugas.laporan.pengembalian*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-range"></i>
-                <span class="menu-text">Laporan Pengembalian</span>
+            <a href="{{ route('petugas.laporan.index') }}"
+                class="nav-link text-white {{ request()->routeIs('petugas.laporan.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-text"></i>
+                <span class="menu-text ms-2">Laporan</span>
             </a>
         </li>
         @endif

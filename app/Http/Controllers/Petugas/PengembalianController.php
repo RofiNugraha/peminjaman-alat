@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Petugas;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use App\Models\Peminjaman;
 use App\Models\Pengembalian;
 use Illuminate\Http\Request;
@@ -105,7 +106,9 @@ class PengembalianController extends Controller
         }
 
         $request->validate([
-            'kondisi.*' => 'required|in:baik,rusak,hilang',
+            'qty_baik.*'   => 'nullable|integer|min:0',
+            'qty_rusak.*'  => 'nullable|integer|min:0',
+            'qty_hilang.*' => 'nullable|integer|min:0',
             'denda_rusak.*' => 'nullable',
             'denda_hilang.*' => 'nullable',
         ]);
@@ -116,79 +119,104 @@ class PengembalianController extends Controller
             $tglKembali = Carbon::parse($peminjaman->tgl_kembali);
 
             $hariTelat = max(0, $tglKembali->diffInDays($today, false));
-            $dendaTelat = 0;
 
+            $dendaTelat = 0;
             foreach ($peminjaman->items as $item) {
                 $dendaTelat += $item->alat->denda_per_hari * $hariTelat;
             }
 
             $pengembalian = Pengembalian::create([
-                'id_peminjaman'    => $peminjaman->id,
-                'id_petugas'       => Auth::id(),
-                'tgl_dikembalikan'=> $today,
-                'hari_telat'       => $hariTelat,
-                'denda_telat'      => $dendaTelat,
+                'id_peminjaman'     => $peminjaman->id,
+                'id_petugas'        => Auth::id(),
+                'tgl_dikembalikan' => $today,
+                'hari_telat'        => $hariTelat,
+                'denda_telat'       => $dendaTelat,
             ]);
 
             $totalDendaBarang = 0;
+            $ringkasanKondisi = [];
 
             foreach ($peminjaman->items as $item) {
 
-                $kondisi = $request->kondisi[$item->id];
-                $qty = $item->qty;
+                $qtyBaik   = (int) ($request->qty_baik[$item->id] ?? 0);
+                $qtyRusak  = (int) ($request->qty_rusak[$item->id] ?? 0);
+                $qtyHilang = (int) ($request->qty_hilang[$item->id] ?? 0);
 
-                $denda = 0;
+                $totalQty = $qtyBaik + $qtyRusak + $qtyHilang;
 
-                if ($kondisi === 'rusak') {
-                $denda = $this->parseRupiah($request->denda_rusak[$item->id] ?? 0);
-
-                    if ($denda <= 0) {
-                        throw new \Exception('Denda rusak tidak valid');
-                    }
+                if ($totalQty !== $item->qty) {
+                    throw new \Exception("Jumlah kondisi tidak sesuai dengan qty alat ({$item->alat->nama_alat})");
                 }
 
-                if ($kondisi === 'hilang') {
-                    $denda = $this->parseRupiah($request->denda_hilang[$item->id] ?? 0);
+                $dendaRusak  = $this->parseRupiah($request->denda_rusak[$item->id] ?? 0);
+                $dendaHilang = $this->parseRupiah($request->denda_hilang[$item->id] ?? 0);
 
-                    if ($denda <= 0) {
-                        throw new \Exception('Denda hilang tidak valid');
-                    }
+                if ($qtyRusak > 0 && $dendaRusak <= 0) {
+                    throw new \Exception("Denda rusak harus diisi");
                 }
 
-                if (in_array($kondisi, ['rusak', 'hilang']) && $denda <= 0) {
-                    throw new \Exception('Denda wajib diisi dan tidak boleh 0');
+                if ($qtyHilang > 0 && $dendaHilang <= 0) {
+                    throw new \Exception("Denda hilang harus diisi");
                 }
 
-                $totalDendaBarang += $denda * $qty;
+                $subtotalDenda = ($qtyRusak * $dendaRusak) + ($qtyHilang * $dendaHilang);
+
+                $totalDendaBarang += $subtotalDenda;
+
+                $ringkasanKondisi[] =
+                    "{$item->alat->nama_alat} (Baik: {$qtyBaik}, Rusak: {$qtyRusak}, Hilang: {$qtyHilang})";
 
                 DB::table('pengembalian_items')->insert([
                     'id_pengembalian' => $pengembalian->id,
-                    'id_alat' => $item->id_alat,
-                    'qty' => $qty,
-                    'kondisi' => $kondisi,
-                    'denda' => $denda,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'id_alat'         => $item->id_alat,
+                    'qty_baik'        => $qtyBaik,
+                    'qty_rusak'       => $qtyRusak,
+                    'qty_hilang'      => $qtyHilang,
+                    'denda'           => $subtotalDenda,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
                 ]);
 
-                if ($kondisi === 'baik') {
-                    $item->alat->increment('stok', $qty);
+                if ($qtyBaik > 0) {
+                    $item->alat->increment('stok', $qtyBaik);
                 }
             }
 
             $totalDenda = $dendaTelat + $totalDendaBarang;
 
+            $peminjaman->update([
+                'status'       => 'dikembalikan',
+                'total_denda'  => $totalDenda,
+                'status_denda' => $totalDenda > 0 ? 'belum' : 'tidak_ada',
+            ]);
+
             if ($totalDenda > 0) {
-                $statusDenda = 'belum';
+                Notification::create([
+                    'id_user' => $peminjaman->id_user,
+                    'judul'   => 'Denda Peminjaman',
+                    'pesan'   => 'Pengembalian telah diproses. Anda memiliki denda sebesar Rp '
+                                . number_format($totalDenda, 0, ',', '.')
+                                . '. Silakan segera melakukan pembayaran.',
+                    'notifiable_id'   => $peminjaman->id,
+                    'notifiable_type' => Peminjaman::class,
+                ]);
             } else {
-                $statusDenda = 'tidak_ada';
+                Notification::create([
+                    'id_user' => $peminjaman->id_user,
+                    'judul'   => 'Pengembalian Berhasil',
+                    'pesan'   => 'Pengembalian telah diproses tanpa denda. Terima kasih.',
+                    'notifiable_id'   => $peminjaman->id,
+                    'notifiable_type' => Peminjaman::class,
+                ]);
             }
 
-            $peminjaman->update([
-                'status' => 'dikembalikan',
-                'total_denda' => $totalDenda,
-                'status_denda' => $statusDenda,
-            ]);
+            logAktivitas(
+                'Mengubah',
+                'Pengembalian',
+                "Memproses pengembalian (Kode {$peminjaman->kode_peminjaman}) "
+                . "(Telat {$hariTelat} hari, Total denda Rp " . number_format($totalDenda, 0, ',', '.') . ") "
+                . "- Detail: " . implode(', ', $ringkasanKondisi)
+            );
         });
 
         return redirect()

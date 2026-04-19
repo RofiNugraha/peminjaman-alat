@@ -8,6 +8,10 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Services\DendaService;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\BuktiPelunasanMail;
+use Illuminate\Support\Facades\Log;
 
 class DendaController extends Controller
 {
@@ -61,33 +65,17 @@ class DendaController extends Controller
         return view('petugas.denda.show', compact('peminjaman'));
     }
 
-    public function lunas(Peminjaman $peminjaman)
+    public function lunas(Peminjaman $peminjaman, DendaService $service)
     {
-        if ($peminjaman->status_denda === 'lunas') {
-            return back()->with('error', 'Denda sudah lunas.');
+        try {
+            $service->tandaiLunas($peminjaman);
+
+            return back()->with('success', 
+                'Denda berhasil dilunasi dan bukti pelunasan telah dikirim ke email.');
+                
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        if ($peminjaman->total_denda <= 0) {
-            return back()->with('error', 'Tidak ada denda.');
-        }
-
-        DB::transaction(function () use ($peminjaman) {
-            $peminjaman->update([
-                'status_denda' => 'lunas'
-            ]);
-
-            Notification::create([
-                'id_user' => $peminjaman->id_user,
-                'judul'   => 'Denda Lunas',
-                'pesan'   => 'Pembayaran denda telah diterima. Terima kasih.',
-                'notifiable_id'   => $peminjaman->id,
-                'notifiable_type' => Peminjaman::class,
-            ]);
-        });
-
-        catat_log(Auth::user()->nama . ' melunasi denda (cash) peminjaman ID ' . $peminjaman->id);
-
-        return back()->with('success', 'Denda berhasil dilunasi.');
     }
 
     public function ingatkan(Peminjaman $peminjaman)
@@ -110,8 +98,46 @@ class DendaController extends Controller
             'notifiable_type' => Peminjaman::class,
         ]);
 
-        catat_log(Auth::user()->nama . ' mengirim pengingat denda ke peminjaman ID ' . $peminjaman->id);
-
         return back()->with('success', 'Pengingat berhasil dikirim.');
+    }
+
+    public function kirimUlang(Peminjaman $peminjaman)
+    {
+        try {
+            if ($peminjaman->status_denda !== 'lunas') {
+                throw new \Exception('Denda belum lunas.');
+            }
+
+            $peminjaman->load(['user','pengembalian.items.alat']);
+
+            Mail::to($peminjaman->user->email)
+                ->send(new BuktiPelunasanMail($peminjaman));
+
+            logAktivitas(
+                'Mengirim',
+                'Bukti Pelunasan',
+                "Mengirim ulang bukti pelunasan (Kode {$peminjaman->kode_peminjaman}) ke {$peminjaman->user->email}"
+            );
+
+            return back()->with('success', 'Bukti pelunasan berhasil dikirim ulang.');
+
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function download(Peminjaman $peminjaman)
+    {
+        if ($peminjaman->status_denda !== 'lunas') {
+            abort(403, 'Denda belum lunas.');
+        }
+
+        $peminjaman->load(['user','pengembalian.items.alat']);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.bukti_pelunasan', [
+            'peminjaman' => $peminjaman
+        ]);
+
+        return $pdf->download('bukti-pelunasan-'.$peminjaman->kode_peminjaman.'.pdf');
     }
 }

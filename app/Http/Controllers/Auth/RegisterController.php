@@ -38,11 +38,26 @@ class RegisterController extends Controller
             'password.confirmed' => 'Konfirmasi password tidak sama.',
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
-        $validated['role'] = 'peminjam';
+        try {
+            $validated['password'] = Hash::make($validated['password']);
+            $validated['role'] = 'peminjam';
 
-        User::create($validated);
+            $user = User::create($validated);
 
-        return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan');
+            logAktivitas(
+                'REGISTER',
+                'Autentikasi',
+                "Register user: '{$user->nama}'",
+                $user->id
+            );
+
+            return redirect()->route('login')->with('success', 'Registrasi berhasil. Silakan login.');
+
+        } catch (\Exception $e) {
+
+            return back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat menambahkan user.');
+        }
     }
 }

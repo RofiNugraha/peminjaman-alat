@@ -82,6 +82,12 @@ class DataSiswaController extends Controller
 
             DB::commit();
 
+            logAktivitas(
+                'Menambahkan',
+                'Import Data Siswa',
+                "Melakukan import data siswa untuk tahun ajaran {$request->tahun_ajaran}"
+            );
+
             return back()->with('success', 'Data berhasil disinkronisasi');
 
         } catch (\Throwable $e) {

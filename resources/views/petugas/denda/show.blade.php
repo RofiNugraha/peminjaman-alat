@@ -127,27 +127,67 @@ $kondisiColor = fn($k) => $k == 'baik' ? 'success' : ($k == 'rusak' ? 'warning' 
                         <thead>
                             <tr>
                                 <th>Nama Alat</th>
-                                <th width="80">Qty</th>
-                                <th width="120">Kondisi</th>
+                                <th class="text-center">Baik</th>
+                                <th class="text-center">Rusak</th>
+                                <th class="text-center">Hilang</th>
                                 <th width="150">Denda</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($peminjaman->pengembalian->items as $item)
                             <tr>
-                                <td class="fw-medium">{{ $item->alat->nama_alat ?? '-' }}</td>
-                                <td>{{ $item->qty }}</td>
-                                <td>
-                                    <span
-                                        class="badge bg-{{ $kondisiColor($item->kondisi) }} bg-opacity-10 text-{{ $kondisiColor($item->kondisi) }}">
-                                        {{ ucfirst($item->kondisi) }}
-                                    </span>
+                                <td class="fw-medium">
+                                    {{ $item->alat->nama_alat ?? '-' }}
                                 </td>
-                                <td>Rp {{ number_format($item->denda,0,',','.') }}</td>
+
+                                <!-- BAIK -->
+                                <td class="text-center">
+                                    @if($item->qty_baik > 0)
+                                    <span class="badge bg-success bg-opacity-10 text-success">
+                                        {{ $item->qty_baik }}
+                                    </span>
+                                    @else
+                                    <span class="text-muted">0</span>
+                                    @endif
+                                </td>
+
+                                <!-- RUSAK -->
+                                <td class="text-center">
+                                    @if($item->qty_rusak > 0)
+                                    <span class="badge bg-warning bg-opacity-10 text-warning">
+                                        {{ $item->qty_rusak }}
+                                    </span>
+                                    @else
+                                    <span class="text-muted">0</span>
+                                    @endif
+                                </td>
+
+                                <!-- HILANG -->
+                                <td class="text-center">
+                                    @if($item->qty_hilang > 0)
+                                    <span class="badge bg-danger bg-opacity-10 text-danger">
+                                        {{ $item->qty_hilang }}
+                                    </span>
+                                    @else
+                                    <span class="text-muted">0</span>
+                                    @endif
+                                </td>
+
+                                <!-- DENDA -->
+                                <td>
+                                    Rp {{ number_format($item->denda,0,',','.') }}
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+
+                <div class="fw-semibold mt-3">
+                    Total Denda:
+                    <span class="text-danger">
+                        Rp {{ number_format($peminjaman->total_denda,0,',','.') }}
+                    </span>
                 </div>
 
                 <div class="mt-3 d-flex flex-wrap gap-2">
@@ -165,6 +205,20 @@ $kondisiColor = fn($k) => $k == 'baik' ? 'success' : ($k == 'rusak' ? 'warning' 
                         @csrf
                         <button type="button" class="btn btn-primary btn-sm" id="btnLunas">
                             Tandai Lunas
+                        </button>
+                    </form>
+                    @endif
+
+                    @if($peminjaman->status_denda === 'lunas')
+                    <a href="{{ route('petugas.denda.download', $peminjaman->id) }}" class="btn btn-success btn-sm">
+                        Download Bukti
+                    </a>
+
+                    <form id="formKirimUlang" action="{{ route('petugas.denda.kirimUlang', $peminjaman->id) }}"
+                        method="POST">
+                        @csrf
+                        <button type="button" class="btn btn-primary btn-sm" id="btnKirimUlang">
+                            Kirim Ulang Bukti
                         </button>
                     </form>
                     @endif
@@ -272,6 +326,20 @@ document.getElementById('btnLunas')?.addEventListener('click', function() {
     }).then((result) => {
         if (result.isConfirmed) {
             document.getElementById('formLunas').submit();
+        }
+    });
+});
+
+document.getElementById('btnKirimUlang')?.addEventListener('click', function() {
+    Swal.fire({
+        title: 'Kirim ulang bukti?',
+        text: 'Email bukti pelunasan akan dikirim ulang ke peminjam.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Kirim'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('formKirimUlang').submit();
         }
     });
 });

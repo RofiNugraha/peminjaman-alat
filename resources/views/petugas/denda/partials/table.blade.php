@@ -21,7 +21,7 @@
 
                 <td class="fw-medium">{{ $p->kode_peminjaman }}</td>
 
-                <td class="fw-semibold">{{ $p->user->nama }}</td>
+                <td class="fw-semibold">{{ $p->user->profilSiswa->dataSiswa->nama ?? $p->user->nama ?? '-' }}</td>
 
                 <td class="text-muted small">
                     @foreach ($p->items as $item)

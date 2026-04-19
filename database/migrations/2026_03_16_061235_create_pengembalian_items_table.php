@@ -16,8 +16,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_pengembalian')->constrained('pengembalians')->cascadeOnDelete();
             $table->foreignId('id_alat')->constrained('alats');
-            $table->integer('qty');
-            $table->enum('kondisi', ['baik', 'rusak', 'hilang']);
+            $table->integer('qty_baik')->default(0);
+            $table->integer('qty_rusak')->default(0);
+            $table->integer('qty_hilang')->default(0);
             $table->integer('denda')->default(0);
             $table->timestamps();
         });

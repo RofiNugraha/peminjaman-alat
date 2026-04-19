@@ -10,6 +10,27 @@
     --color-text-muted: #64748B;
 }
 
+body {
+    background: var(--color-bg);
+    font-family: 'Poppins', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+}
+
+p {
+    font-weight: 400;
+}
+
+.small, .text-muted {
+    font-weight: 400;
+}
+
+* {
+    font-family: 'Poppins', sans-serif;
+}
+
 .auth-wrapper {
     min-height: 100vh;
     background: linear-gradient(135deg, #eef2ff, #f8fafc);

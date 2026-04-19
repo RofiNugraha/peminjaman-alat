@@ -65,10 +65,12 @@ $colors = [
 
                     <div class="col-md-6">
                         <label class="form-label small text-muted">Status</label>
-                        <span
-                            class="badge bg-{{ $colors[$peminjaman->status] }} bg-opacity-10 text-{{ $colors[$peminjaman->status] }}">
-                            {{ ucfirst($peminjaman->status) }}
-                        </span>
+                        <div>
+                            <span
+                                class="badge bg-{{ $colors[$peminjaman->status] }} bg-opacity-10 text-{{ $colors[$peminjaman->status] }}">
+                                {{ ucfirst($peminjaman->status) }}
+                            </span>
+                        </div>
                     </div>
 
                     <div class="col-md-6">
@@ -121,21 +123,21 @@ $colors = [
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-
-                <h6 class="fw-semibold mb-3">Pengembalian & Denda</h6>
+                <h6 class="fw-semibold mb-3">Data Pengembalian</h6>
 
                 @if($peminjaman->pengembalian)
 
                 <div class="row gy-3 mb-3">
 
                     <div class="col-md-4">
-                        <label class="form-label small text-muted">Tanggal</label>
-                        <div>{{ \Carbon\Carbon::parse($peminjaman->pengembalian->tgl_dikembalikan)->format('d M Y') }}
+                        <label class="form-label small text-muted">Tanggal Dikembalikan</label>
+                        <div>
+                            {{ \Carbon\Carbon::parse($peminjaman->pengembalian->tgl_dikembalikan)->format('d M Y') }}
                         </div>
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label small text-muted">Terlambat</label>
+                        <label class="form-label small text-muted">Hari Telat</label>
                         <div>{{ $peminjaman->pengembalian->hari_telat }} hari</div>
                     </div>
 
@@ -146,22 +148,89 @@ $colors = [
 
                 </div>
 
-                <div class="fw-semibold">
+                <!-- TABEL KONDISI -->
+                <div class="table-responsive">
+                    <table class="table table-modern align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nama Alat</th>
+                                <th class="text-center">Baik</th>
+                                <th class="text-center">Rusak</th>
+                                <th class="text-center">Hilang</th>
+                                <th width="150">Denda</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($peminjaman->pengembalian->items as $item)
+                            <tr>
+                                <td class="fw-medium">
+                                    {{ $item->alat->nama_alat ?? '-' }}
+                                    <div class="small text-muted">
+                                        Total: {{ $item->qty_baik + $item->qty_rusak + $item->qty_hilang }}
+                                    </div>
+                                </td>
+
+                                <!-- BAIK -->
+                                <td class="text-center">
+                                    @if($item->qty_baik > 0)
+                                    <span class="badge bg-success bg-opacity-10 text-success">
+                                        {{ $item->qty_baik }}
+                                    </span>
+                                    @else
+                                    <span class="text-muted">0</span>
+                                    @endif
+                                </td>
+
+                                <!-- RUSAK -->
+                                <td class="text-center">
+                                    @if($item->qty_rusak > 0)
+                                    <span class="badge bg-warning bg-opacity-10 text-warning">
+                                        {{ $item->qty_rusak }}
+                                    </span>
+                                    @else
+                                    <span class="text-muted">0</span>
+                                    @endif
+                                </td>
+
+                                <!-- HILANG -->
+                                <td class="text-center">
+                                    @if($item->qty_hilang > 0)
+                                    <span class="badge bg-danger bg-opacity-10 text-danger">
+                                        {{ $item->qty_hilang }}
+                                    </span>
+                                    @else
+                                    <span class="text-muted">0</span>
+                                    @endif
+                                </td>
+
+                                <!-- DENDA -->
+                                <td>
+                                    Rp {{ number_format($item->denda,0,',','.') }}
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- TOTAL -->
+                <div class="fw-semibold mt-3">
                     Total Denda:
                     <span class="text-danger">
                         Rp {{ number_format($peminjaman->total_denda,0,',','.') }}
                     </span>
                 </div>
 
+                <!-- STATUS -->
                 <div class="mt-2">
                     Status:
                     <span class="badge bg-{{ 
-                        $peminjaman->status_denda == 'lunas' ? 'success' : 
-                        ($peminjaman->status_denda == 'belum' ? 'danger' : 'secondary') 
-                    }} bg-opacity-10 text-{{ 
-                        $peminjaman->status_denda == 'lunas' ? 'success' : 
-                        ($peminjaman->status_denda == 'belum' ? 'danger' : 'secondary') 
-                    }}">
+        $peminjaman->status_denda == 'lunas' ? 'success' : 
+        ($peminjaman->status_denda == 'belum' ? 'danger' : 'secondary') 
+    }} bg-opacity-10 text-{{ 
+        $peminjaman->status_denda == 'lunas' ? 'success' : 
+        ($peminjaman->status_denda == 'belum' ? 'danger' : 'secondary') 
+    }}">
                         {{ ucfirst($peminjaman->status_denda) }}
                     </span>
                 </div>
@@ -171,7 +240,6 @@ $colors = [
                     Belum ada data pengembalian
                 </div>
                 @endif
-
             </div>
         </div>
     </div>

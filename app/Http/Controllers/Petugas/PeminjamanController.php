@@ -99,9 +99,13 @@ class PeminjamanController extends Controller
                 'approved_by'   => Auth::id(),
                 'approved_at'   => now(),
             ]);
-        });
 
-        catat_log(Auth::user()->nama . ' menyetujui peminjaman oleh ' . $peminjaman->user->nama);
+            logAktivitas(
+                'Mengubah',
+                'Peminjaman',
+                "Menyetujui pengajuan peminjaman (Kode {$peminjaman->kode_peminjaman})"
+            );
+        });
 
         return redirect()->route('petugas.peminjaman.index')
             ->with('success','Pengajuan berhasil disetujui.');
@@ -123,7 +127,11 @@ class PeminjamanController extends Controller
             'rejected_at'   => now(),
         ]);
 
-        catat_log(Auth::user()->nama . ' menolak peminjaman oleh ' . $peminjaman->user->nama);
+        logAktivitas(
+            'Mengubah',
+            'Peminjaman',
+            "Menolak pengajuan peminjaman (Kode {$peminjaman->kode_peminjaman})"
+        );
 
         return redirect()->route('petugas.peminjaman.index')
             ->with('success','Pengajuan berhasil ditolak.');

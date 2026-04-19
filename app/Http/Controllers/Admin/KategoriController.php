@@ -62,7 +62,11 @@ class KategoriController extends Controller
 
         $kategori = Kategori::create($validated);
 
-        catat_log(Auth::user()->nama . ' menambahkan kategori: ' . $kategori->nama_kategori);
+        logAktivitas(
+            'Menambahkan',
+            'Kategori',
+            "Menambahkan kategori '{$kategori->nama_kategori}' (ID-{$kategori->id})"
+        );
 
         return redirect()
             ->route('kategori.index')
@@ -93,9 +97,15 @@ class KategoriController extends Controller
             'keterangan.max'         => 'Keterangan maksimal 255 karakter.',
         ]);
 
+        $namaLama = $kategori->nama_kategori;
+
         $kategori->update($validated);
 
-        catat_log(Auth::user()->nama . ' mengubah kategori: ' . $kategori->nama_kategori);
+        logAktivitas(
+            'Mengubah',
+            'Kategori',
+            "Mengubah kategori '{$namaLama}' (ID-{$kategori->id}) menjadi '{$kategori->nama_kategori}'"
+        );
 
         return redirect()->route('kategori.index')->with('success','Kategori berhasil diperbarui');
     }
@@ -107,10 +117,15 @@ class KategoriController extends Controller
         }
 
         $nama = $kategori->nama_kategori;
+        $id   = $kategori->id;
         
         $kategori->delete();
 
-        catat_log(Auth::user()->nama . ' menghapus kategori: ' . $nama);
+        logAktivitas(
+            'Menghapus',
+            'Kategori',
+            "Menghapus kategori '{$nama}' (ID-{$id})"
+        );
 
         return redirect()->route('kategori.index')->with('success','Kategori berhasil dihapus');
     }

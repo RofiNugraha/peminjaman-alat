@@ -8,26 +8,33 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\KategoriController;
 use App\Http\Controllers\Admin\AlatController;
+use App\Http\Controllers\Admin\ContactController;
 use App\Http\Controllers\Admin\DataSiswaController;
 use App\Http\Controllers\Admin\DendaController as AdminDendaController;
 use App\Http\Controllers\Admin\LogAktivitasController;
 use App\Http\Controllers\Peminjam\KategoriAlatController;
 use App\Http\Controllers\Admin\PeminjamanController as AdminPeminjamanController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\TestimonialController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Peminjam\DendaController as PeminjamDendaController;
 use App\Http\Controllers\Peminjam\NotificationController;
 use App\Http\Controllers\Petugas\PeminjamanController as PetugasPeminjamanController;
 use App\Http\Controllers\Petugas\PengembalianController;
 use App\Http\Controllers\Peminjam\PeminjamanController;
 use App\Http\Controllers\Petugas\DendaController;
-use App\Http\Controllers\Petugas\Laporan\DendaReportController;
-use App\Http\Controllers\Petugas\Laporan\PeminjamanReportController;
-use App\Http\Controllers\Petugas\Laporan\PengembalianReportController;
+use App\Http\Controllers\Petugas\LaporanPeminjamanController;
 use App\Http\Controllers\ProfileController;
 use App\Models\DataSiswa;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/', [LandingController::class, 'index'])->name('landing');
+
+Route::post('/testimoni', [LandingController::class, 'storeTestimoni'])
+    ->name('testimoni.store');
 
 Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
@@ -61,9 +68,13 @@ Route::middleware('auth')->group(function () {
         Route::resource('kategori', KategoriController::class);
         
         Route::resource('alat', AlatController::class);
+
+        Route::resource('setting', SettingController::class);
+        Route::resource('testimonial', TestimonialController::class);
+        Route::resource('contact', ContactController::class);
         
         Route::get('/peminjaman', [AdminPeminjamanController::class, 'index'])->name('admin.peminjaman.index');
-        Route::get('/peminjanan/{peminjaman}', [AdminPeminjamanController::class, 'show'])->name('admin.peminjaman.show');
+        Route::get('/peminjaman/{peminjaman}', [AdminPeminjamanController::class, 'show'])->name('admin.peminjaman.show');
         
         Route::get('/log_aktivitas', [LogAktivitasController::class, 'index'])->name('admin.log_aktivitas.index');
         
@@ -74,7 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:petugas')->prefix('petugas')->name('petugas.')->group(function () {
 
         Route::get('/peminjaman', [PetugasPeminjamanController::class, 'index'])->name('peminjaman.index');
-        Route::get('/peminjanan/{peminjaman}', [PetugasPeminjamanController::class, 'show'])->name('peminjaman.show');
+        Route::get('/peminjaman/{peminjaman}', [PetugasPeminjamanController::class, 'show'])->name('peminjaman.show');
         Route::post('/peminjaman/{peminjaman}/approve', [PetugasPeminjamanController::class, 'approve'])->name('peminjaman.approve');
         Route::post('/peminjaman/{peminjaman}/reject', [PetugasPeminjamanController::class, 'reject'])->name('peminjaman.reject');
 
@@ -86,19 +97,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/denda/{peminjaman}', [DendaController::class, 'show'])->name('denda.show');
         Route::post('/denda/{peminjaman}/ingatkan', [DendaController::class, 'ingatkan'])->name('denda.ingatkan');
         Route::post('/denda/{peminjaman}/lunas', [DendaController::class, 'lunas'])->name('denda.lunas');
+        Route::post('/denda/{peminjaman}/kirim-ulang', [DendaController::class, 'kirimUlang'])->name('denda.kirimUlang');
+        Route::get('/denda/{peminjaman}/download', [DendaController::class, 'download'])->name('denda.download');
 
         Route::prefix('laporan')->name('laporan.')->group(function () {
-            Route::get('/denda', [DendaReportController::class, 'index'])->name('denda.index');
-            Route::get('/denda/pdf', [DendaReportController::class, 'exportPdf'])->name('denda.pdf');
-            Route::get('/denda/excel', [DendaReportController::class, 'exportExcel'])->name('denda.excel');
-
-            Route::get('/peminjaman', [PeminjamanReportController::class, 'index'])->name('peminjaman.index');
-            Route::get('/peminjaman/pdf', [PeminjamanReportController::class, 'exportPdf'])->name('peminjaman.pdf');
-            Route::get('/peminjaman/excel', [PeminjamanReportController::class, 'exportExcel'])->name('peminjaman.excel');
-
-            Route::get('/pengembalian', [PengembalianReportController::class, 'index'])->name('pengembalian.index');
-            Route::get('/pengembalian/pdf', [PengembalianReportController::class, 'exportPdf'])->name('pengembalian.pdf');
-            Route::get('/pengembalian/excel', [PengembalianReportController::class, 'exportExcel'])->name('pengembalian.excel');
+            Route::get('/', [LaporanPeminjamanController::class, 'index'])->name('index');
+            Route::get('/pdf', [LaporanPeminjamanController::class, 'exportPdf'])->name('pdf');
+            Route::get('/excel', [LaporanPeminjamanController::class, 'exportExcel'])->name('excel');
         });
     });
 

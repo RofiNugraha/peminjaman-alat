@@ -120,7 +120,7 @@ $colors = [
         <div class="card">
             <div class="card-body">
 
-                <h6 class="fw-semibold mb-3">Pengembalian & Denda</h6>
+                <h6 class="fw-semibold mb-3">Data Pengembalian</h6>
 
                 @if($peminjaman->pengembalian)
 
@@ -145,27 +145,59 @@ $colors = [
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-modern align-middle">
+                    <table class="table table-modern align-middle mb-0">
                         <thead>
                             <tr>
                                 <th>Nama Alat</th>
-                                <th>Qty</th>
-                                <th>Kondisi</th>
-                                <th>Denda</th>
+                                <th class="text-center">Baik</th>
+                                <th class="text-center">Rusak</th>
+                                <th class="text-center">Hilang</th>
+                                <th width="150">Denda</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($peminjaman->pengembalian->items as $item)
                             <tr>
-                                <td>{{ $item->alat->nama_alat ?? '-' }}</td>
-                                <td>{{ $item->qty }}</td>
-                                <td>
-                                    <span class="badge bg-light border text-dark">
-                                        {{ ucfirst($item->kondisi) }}
-                                    </span>
+                                <td class="fw-medium">
+                                    {{ $item->alat->nama_alat ?? '-' }}
                                 </td>
-                                <td class="text-danger fw-semibold">
-                                    Rp {{ number_format($item->denda, 0, ',', '.') }}
+
+                                <!-- BAIK -->
+                                <td class="text-center">
+                                    @if($item->qty_baik > 0)
+                                    <span class="badge bg-success bg-opacity-10 text-success">
+                                        {{ $item->qty_baik }}
+                                    </span>
+                                    @else
+                                    <span class="text-muted">0</span>
+                                    @endif
+                                </td>
+
+                                <!-- RUSAK -->
+                                <td class="text-center">
+                                    @if($item->qty_rusak > 0)
+                                    <span class="badge bg-warning bg-opacity-10 text-warning">
+                                        {{ $item->qty_rusak }}
+                                    </span>
+                                    @else
+                                    <span class="text-muted">0</span>
+                                    @endif
+                                </td>
+
+                                <!-- HILANG -->
+                                <td class="text-center">
+                                    @if($item->qty_hilang > 0)
+                                    <span class="badge bg-danger bg-opacity-10 text-danger">
+                                        {{ $item->qty_hilang }}
+                                    </span>
+                                    @else
+                                    <span class="text-muted">0</span>
+                                    @endif
+                                </td>
+
+                                <!-- DENDA -->
+                                <td>
+                                    Rp {{ number_format($item->denda,0,',','.') }}
                                 </td>
                             </tr>
                             @endforeach
